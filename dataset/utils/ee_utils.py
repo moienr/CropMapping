@@ -1067,3 +1067,69 @@ def add_driection_band(image: ee.Image, roi: ee.Geometry) -> ee.Image:
     # Add the constant band with one to the image
     image_with_constant_band = image.addBands(constant_band_with_one.clip(roi))
     return image_with_constant_band.clip(roi)
+
+
+#==========================================================================================================-
+#===================================================================================================       |
+#==========================================================================================                |
+#============================CROP MAPPING FUNCTIONS==============================                          |
+#==========================================================================================                |
+#===================================================================================================       |
+#==========================================================================================================-
+
+
+# Function to divide an image by 10000
+def raiometric_scaling(image):
+    """
+    Divides an EE image by 10000.
+    Input: EE image
+    """
+    return image.divide(10000)
+
+# Mask function for clouds and snow.
+def maskS2cloudsAndSnow(image):
+    """
+    Masks clouds and snow in Sentinel-2 images.
+    Input: EE image
+    """
+    scl = image.select('SCL')
+    cloudMask = scl.neq(8).And(scl.neq(9))
+    snowMask = scl.neq(11)
+    imageWithoutClouds = image.updateMask(cloudMask)
+    imageWithoutCloudsOrSnow = imageWithoutClouds.updateMask(snowMask)
+      
+    return imageWithoutCloudsOrSnow
+
+
+
+# Function for cloudless collection.
+def create_s2_collection(roi, start_date, end_date, radiometric_scaling = True):
+    """
+    Creates a cloudless Sentinel-2 image collection.
+    Input: 
+    ---
+        roi: EE geometry
+        start_date: string, start date in 'yyyy-mm-dd' format
+        end_date: string, end date in 'yyyy-mm-dd' format
+        radiometric_scaling: boolean, whether to apply radiometric scaling to the images
+    Returns: 
+    ---
+        EE image collection
+    """
+
+    collection = (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
+                  .filterDate(start_date, end_date)
+                  .filterBounds(roi)
+                  .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE',100))
+                  .map(maskS2cloudsAndSnow))
+    if radiometric_scaling:
+        collection = collection.map(raiometric_scaling)
+    
+    return collection
+
+def sen1_add_ratio(image):
+    """ Adds a ratio band to the input Sentinel-1 image. This is for Visualisation purposes.
+    Input: EE image
+    Returns: EE image with a ratio band
+    """
+    return image.addBands(image.select('VV').divide(image.select('VH')).rename('ratio'))
