@@ -1133,3 +1133,58 @@ def sen1_add_ratio(image):
     Returns: EE image with a ratio band
     """
     return image.addBands(image.select('VV').divide(image.select('VH')).rename('ratio'))
+
+def priority_path_change(path):
+    if path == 'ASCENDING':
+        return 'DESCENDING'
+    else:
+        return 'ASCENDING'
+
+
+def create_s1_collection(roi, start_date, end_date, priority_path = 'ASCENDING'):
+    s1_collection = ee.ImageCollection('COPERNICUS/S1_GRD') \
+                                        .filterDate(start_date, end_date) \
+                                        .filterBounds(roi) \
+                                        .filter(ee.Filter.eq('resolution','H')) \
+                                        .filter(ee.Filter.eq('instrumentMode','IW'))\
+                                        .filter(ee.Filter.contains('.geo', roi)) \
+                                        .filterMetadata('orbitProperties_pass', 'equals', priority_path) 
+    if is_col_empty(s1_collection):
+        print('No single scene coverge was found! checking second priority path')
+        priority_path = priority_path_change(priority_path)
+        s1_collection = ee.ImageCollection('COPERNICUS/S1_GRD') \
+                                            .filterDate(start_date, end_date) \
+                                            .filterBounds(roi) \
+                                            .filter(ee.Filter.eq('resolution','H')) \
+                                            .filter(ee.Filter.eq('instrumentMode','IW'))\
+                                            .filter(ee.Filter.contains('.geo', roi)) \
+                                            .filterMetadata('orbitProperties_pass', 'equals', priority_path) 
+    # if collection is still empty, check for Mosaic in pirority path
+    if is_col_empty(s1_collection):
+        print('No single scene coverge was found! checking for Mosaic in first priority path')
+        priority_path = priority_path_change(priority_path)
+        s1_collection = ee.ImageCollection('COPERNICUS/S1_GRD') \
+                                            .filterDate(start_date, end_date) \
+                                            .filterBounds(roi) \
+                                            .filter(ee.Filter.eq('resolution','H')) \
+                                            .filter(ee.Filter.eq('instrumentMode','IW'))\
+                                            .filterMetadata('orbitProperties_pass', 'equals', priority_path)   
+    # if collection is still empty, check for Mosaic in second priority path
+    if is_col_empty(s1_collection):
+        print('No Mosaic in priority path was found! checking for Mosaic in second priority path')
+        priority_path = priority_path_change(priority_path)
+        s1_collection = ee.ImageCollection('COPERNICUS/S1_GRD') \
+                                            .filterDate(start_date, end_date) \
+                                            .filterBounds(roi) \
+                                            .filter(ee.Filter.eq('resolution','H')) \
+                                            .filter(ee.Filter.eq('instrumentMode','IW'))\
+                                            .filterMetadata('orbitProperties_pass', 'equals', priority_path)   
+    if is_col_empty(s1_collection):
+        print('No S1 data was found! Something is wrong!')
+        return None
+
+    return s1_collection
+                                            
+        
+
+                
