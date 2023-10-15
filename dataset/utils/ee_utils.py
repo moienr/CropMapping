@@ -538,35 +538,32 @@ def gee_list_item_remover(img_collection,img_indcies_list:list):
 #3 #https://developers.google.com/earth-engine/apidocs/ee-image-addbands
 #4 #https://developers.google.com/earth-engine/apidocs/ee-image-expression
 
-# adds band `VV_lin` to the images, code in link #1 doesn't work beucase it uses name `VV` and sets the replace in #3 to True which then overwrites the band we created with original `VV` !
-def toLinear(db:ee.Image):
-    """
-    Adds a band named 'VV_lin' to the input image collection where the values of the band 'VV' are converted to linear scale using the formula pow(10, db / 10).
-    
-    Args:
-        `db`: An ee.ImageCollection object with a 'VV' band in dB scale.
-    
-    Returns:
-        An ee.Image object with an additional band named 'VV_lin'.
-    """
-    lin = db.expression('pow(10, db / 10)', {'db': db.select('VV')}).rename('VV_lin')
-    return db.addBands(lin)
+import ee
 
-# reads the added band `VV_linear` and converts it to db scale, we use this after we averaged over linear values.
-def toDb(linear:ee.Image, input_band_name:str = 'VV_lin'):
-    """
-    Converts the linear `VV_lin` band of the input image collection `linear` to decibels using the formula 10 * log10(linear).
-    The resulting band is named `VV_db`.
+
+
+
+
+
+
+def toLinear(image: ee.Image) -> ee.Image:
+    # Convert VV to linear scale
+    vv_linear = ee.Image(10.0).pow(image.select('VV').divide(10.0))
+    # Convert VH to linear scale
+    vh_linear = ee.Image(10.0).pow(image.select('VH').divide(10.0))
+    # Return image with linear bands
+    return image.addBands(vv_linear.rename('VV').addBands(vh_linear.rename('VH')))
+
+def todB(image: ee.Image) -> ee.Image:
+    # Convert VV to dB scale
+    vv_db = ee.Image(10.0).multiply(image.select('VV').log10()).rename('VV')
+    # Convert VH to dB scale
+    vh_db = ee.Image(10.0).multiply(image.select('VH').log10()).rename('VH')
+    # remove the linear bands
+    image = image.select([])
     
-    Args:
-        `linear`: An Earth Engine image collection with a band named 'VV_lin' in linear scale.
-        `input_band_name`: The name of the linear band to convert to decibels. Default is 'VV_lin'.
-    
-    Returns:
-        An Earth Engine image with an added band named 'VV_db' in decibels.
-    """
-    lin = linear.expression('10 * log10(linear)', {'linear': linear.select(input_band_name)}).rename('VV_db')
-    return linear.addBands(lin)
+    return image.addBands(vv_db).addBands(vh_db)
+
 
 
 
@@ -1078,6 +1075,10 @@ def add_driection_band(image: ee.Image, roi: ee.Geometry) -> ee.Image:
 #==========================================================================================================-
 
 
+
+
+
+
 # Function to divide an image by 10000
 def raiometric_scaling(image):
     """
@@ -1127,6 +1128,25 @@ def create_s2_collection(roi, start_date, end_date, radiometric_scaling = True):
     
     return collection
 
+def get_combined_s2_img(roi, start_date, end_date, radiometric_scaling=True):
+    """
+    Returns the median composite of a Cloudless Sentinel-2 imagery for a given region of interest (roi) and time range.
+
+    Args:
+    - roi (ee.Geometry): Region of interest.
+    - start_date (str): Start date of the time range in yyyy-mm-dd format.
+    - end_date (str): End date of the time range in yyyy-mm-dd format.
+    - radiometric_scaling (bool): Whether to apply radiometric scaling to the imagery this will make sclaing (0-1). Default is True. 
+
+    Returns:
+    - ee.Image: Median composite of Sentinel-2 imagery.
+    """
+    col = create_s2_collection(roi, start_date, end_date, radiometric_scaling=radiometric_scaling)
+    return col.median().clip(roi)
+def get_combined_s2_image(roi, start_date, end_date, radiometric_scaling = True):
+    col = create_s2_collection(roi, start_date, end_date, radiometric_scaling = radiometric_scaling)
+    return col.median().clip(roi)
+
 def sen1_add_ratio(image, vv_name = 'VV', vh_name = 'VH', ratio_name = 'ratio'):
     """ Adds a ratio band to the input Sentinel-1 image. This is for Visualisation purposes.
     Input: EE image
@@ -1139,6 +1159,59 @@ def priority_path_change(path):
         return 'DESCENDING'
     else:
         return 'ASCENDING'
+
+
+
+
+def convert_to_linear(image):
+    """
+    Convert Sentinel-1 image bands from dB format to linear format.
+
+    Args:
+        image (ee.Image): Sentinel-1 image with VV and VH bands in dB format.
+
+    Returns:
+        ee.Image: Sentinel-1 image with VV and VH bands in linear format.
+    """
+    # Define a function to convert dB to linear scale.
+    def dB_to_linear(image, band_name):
+        return image.select([band_name]).expression('10 ** (b() / 10.0)', {'b': image.select([band_name])}).rename([band_name])
+
+    # Convert both VV and VH bands to linear scale.
+    image_linear = image.addBands([dB_to_linear(image, 'VV'), dB_to_linear(image, 'VH')], overwrite=True)
+
+    return image_linear
+
+
+import ee
+
+def convert_to_dB(image):
+    """
+    Convert Sentinel-1 image bands from linear format to dB format.
+
+    Args:
+        image (ee.Image): Sentinel-1 image with VV and VH bands in linear format.
+
+    Returns:
+        ee.Image: Sentinel-1 image with VV and VH bands in dB format.
+    """
+    # Define a function to convert linear to dB scale.
+    def linear_to_dB(image, band_name):
+        return image.select([band_name]).expression('10 * log10(b())', {'b': image.select([band_name])}).rename([band_name])
+
+    # Convert both VV and VH bands to dB scale.
+    image_dB = image.addBands([linear_to_dB(image, 'VV'), linear_to_dB(image, 'VH')], overwrite=True)
+
+    return image_dB
+
+
+
+
+
+
+
+
+
 
 
 def create_s1_collection(roi, start_date, end_date, priority_path = 'ASCENDING'):
@@ -1192,16 +1265,33 @@ def get_orbit_numbers(collection):
     return list(set(orbit_numbers))
 
 def reduce_s1_collection(collection, orbit_number):
+    """
+    Reduces a Sentinel-1 collection to a single image by taking the mean of the images with a given relative orbit number.
+    
+    Args:
+    - collection: an ee.ImageCollection object containing Sentinel-1 images
+    - orbit_number: an integer representing the relative orbit number to filter the collection by
+    
+    Returns:
+    - image: an ee.Image object representing the mean of the filtered collection, with band names changed to `VV_mean` and `VH_mean`
+    """
     # Filter the collection by the relative orbit number
     orbit_collection = collection.filter(ee.Filter.eq('relativeOrbitNumber_start', orbit_number))
     
-    # convert to lniear scale before mean
-    orbit_collection = orbit_collection.map(toLinear)
+    # convert to linear scale before mean
+    orbit_collection = orbit_collection.map(convert_to_linear)
+    
     # Reduce the collection to a single image by taking the mean
-    image = orbit_collection.reduce(ee.Reducer.mean())
-    # back to db scale
-    image = toDb(image)
+    image = orbit_collection.reduce(ee.Reducer.mean()) # this will change band names to VV_mean and VH_mean
+    # change band names back to VV and VH
+    image = image.select(['VV_mean','VH_mean'],['VV','VH'])
+    
+    
+    # back to dB scale
+    image = convert_to_dB(image)
+    
     return image
+
 
 
 def combine_images(image_list):
@@ -1217,10 +1307,20 @@ def combine_images(image_list):
     return combined_image
 
 
-def get_combined_s1_image(roi, start_date, end_date, priority_path = 'ASCENDING'):
-    """ This function takes a region of interest, a start date, an end date, and a priority path, and returns a single Sentinel-1 image.
-    The colleciton is first filtered by the priority path, then the unique orbit numbers are found, and the collection is reduced to a single image for each orbit number.
-    In rois that there is no single scene coverege, the function will return a Mosaic image of all the orbits. where they have no intersection, and each orbit is averaged seperatly.
+def get_combined_s1_image(roi, start_date, end_date, priority_path='ASCENDING'):
+    """
+    This function takes a region of interest, a start date, an end date, and a priority path, and returns a single Sentinel-1 image.
+    The collection is first filtered by the priority path, then the unique orbit numbers are found, and the collection is reduced to a single image for each orbit number.
+    In rois that there is no single scene coverage, the function will return a Mosaic image of all the orbits where they have no intersection, and each orbit is averaged separately.
+
+    Args:
+        roi (ee.Geometry): A region of interest.
+        start_date (str): The start date of the image collection in 'YYYY-MM-DD' format.
+        end_date (str): The end date of the image collection in 'YYYY-MM-DD' format.
+        priority_path (str, optional): The priority path of the Sentinel-1 image. Defaults to 'ASCENDING'.
+
+    Returns:
+        ee.Image: A single Sentinel-1 image.
     """
     # Create the initial collection
     s1_collection = create_s1_collection(roi, start_date, end_date, priority_path)
@@ -1233,5 +1333,5 @@ def get_combined_s1_image(roi, start_date, end_date, priority_path = 'ASCENDING'
         image = reduce_s1_collection(s1_collection, orbit_number)
         image_list.append(image)
     # Combine the images into a single image
-    combined_image = combine_images(image_list)
+    combined_image = combine_images(image_list).clip(roi)
     return combined_image
