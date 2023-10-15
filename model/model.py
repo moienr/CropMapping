@@ -196,7 +196,16 @@ def test_unet_block():
 #         return self.final_conv(x)
         
 class UNet3DBlock(nn.Module):
+    """ A UNet3D model for time series data.
+    """
     def __init__(self, in_channels=9, out_channels=10, ts_depth=6, init_features=64):
+        """ Initialize the UNet3D model.
+        Input:
+        - in_channels (int): The number of input channels.
+        - out_channels (int): The number of output channels.
+        - ts_depth (int): The depth of the kernel. Should be the same as the depth of the input (i.e. the number of time steps in TimeSeries)
+        - init_features (int): The number of initial features (Unet: 64, 128, 256, 512)
+        """
         super().__init__()
         self.conv3d = Conv3dBlock(in_channels=in_channels, out_channels=32, depth=ts_depth)
         self.unet = UNETBlock(in_channels=32, init_features=init_features)
@@ -220,7 +229,18 @@ def test_unet3d_block():
     
 
 class DualUNet3D(nn.Module):
+    """ A Dual UNet3D model for Sentinel-1 and Sentinel-2 data TimeSeries Segmentation.
+    """
     def __init__(self, s1_in_channels=2, s2_in_channels=9, out_channels=10, ts_depth=6, init_features=64):
+        """ Initialize the Dual UNet3D model.
+        Input:
+        ---
+        s1_in_channels (int): The number of input channels for Sentinel-1 data (default: 2 | VV and VH)
+        s2_in_channels (int): The number of input channels for Sentinel-2 data (default: 9 | 10m bands)
+        out_channels (int): Number of ouput Classes, default: 10
+        ts_depth (int): The depth of the kernel. Should be the same as the depth of the input (i.e. the number of time steps in TimeSeries)
+        
+        """
         super().__init__()
         self.unet3d_s1 = UNet3DBlock(in_channels=s1_in_channels, out_channels=out_channels, ts_depth=ts_depth, init_features=init_features)
         self.unet3d_s2 = UNet3DBlock(in_channels=s2_in_channels, out_channels=out_channels, ts_depth=ts_depth, init_features=init_features)
@@ -228,6 +248,16 @@ class DualUNet3D(nn.Module):
         self.final_conv = nn.Conv2d(init_features*2, out_channels, kernel_size=1)
     
     def forward(self, s1_img, s2_img):
+        """ Forward pass of the Dual UNet3D model.
+        Input:
+        ---
+        s1_img (torch.Tensor): The input tensor for Sentinel-1 data, with shape (batch_size, channels, depth, height, width).
+        s2_img (torch.Tensor): The input tensor for Sentinel-2 data, with shape (batch_size, channels, depth, height, width).
+        
+        Output:
+        ---
+        x (torch.Tensor): The output tensor with number of channels the same as output classes, with shape (batch_size, out_channels, height, width).
+        """
         s1_feats = self.unet3d_s1(s1_img)
         s2_feats = self.unet3d_s2(s2_img)
         feats = torch.cat((s1_feats, s2_feats), dim=1)
