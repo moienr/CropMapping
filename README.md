@@ -15,7 +15,9 @@ Cehck sign: &#10007;
 ## Moien
 | Task | Status |
 |:---  |:---: |
-| Create Dataset | &#10007;  |
+| Download Dataset | &#10003;  |
+| Patch Dataset | &#10007;  |
+| Move DS to Cloab | &#10007;  |
 | Build Model | &#10007; |
 
 
