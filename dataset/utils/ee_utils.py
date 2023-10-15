@@ -1127,12 +1127,12 @@ def create_s2_collection(roi, start_date, end_date, radiometric_scaling = True):
     
     return collection
 
-def sen1_add_ratio(image):
+def sen1_add_ratio(image, vv_name = 'VV', vh_name = 'VH', ratio_name = 'ratio'):
     """ Adds a ratio band to the input Sentinel-1 image. This is for Visualisation purposes.
     Input: EE image
     Returns: EE image with a ratio band
     """
-    return image.addBands(image.select('VV').divide(image.select('VH')).rename('ratio'))
+    return image.addBands(image.select(vv_name).divide(image.select(vh_name)).rename(ratio_name))
 
 def priority_path_change(path):
     if path == 'ASCENDING':
@@ -1186,5 +1186,52 @@ def create_s1_collection(roi, start_date, end_date, priority_path = 'ASCENDING')
     return s1_collection
                                             
         
+def get_orbit_numbers(collection):
+    # Get the unique orbit numbers in the collection.
+    orbit_numbers = collection.aggregate_array('relativeOrbitNumber_start').getInfo()
+    return list(set(orbit_numbers))
 
-                
+def reduce_s1_collection(collection, orbit_number):
+    # Filter the collection by the relative orbit number
+    orbit_collection = collection.filter(ee.Filter.eq('relativeOrbitNumber_start', orbit_number))
+    
+    # convert to lniear scale before mean
+    orbit_collection = orbit_collection.map(toLinear)
+    # Reduce the collection to a single image by taking the mean
+    image = orbit_collection.reduce(ee.Reducer.mean())
+    # back to db scale
+    image = toDb(image)
+    return image
+
+
+def combine_images(image_list):
+    """ Takes a list of GEE images and combines them into a single image.
+    Note: .mosaic() method, in the areas where there is intersection, it takes the pixel value of the image that is last in the list.
+    This is particularly useful when combining SAR images, which we sperated based on their orbit number. This will make sure that the areas of interseciton
+    are not a combination more than one orbit which is not desirable in SAR images, as they have different incidence angles, and this changes the images.
+    """
+    # Convert the list of images to an ImageCollection
+    image_collection = ee.ImageCollection(image_list)
+    # Combine the images
+    combined_image = image_collection.mosaic()
+    return combined_image
+
+
+def get_combined_s1_image(roi, start_date, end_date, priority_path = 'ASCENDING'):
+    """ This function takes a region of interest, a start date, an end date, and a priority path, and returns a single Sentinel-1 image.
+    The colleciton is first filtered by the priority path, then the unique orbit numbers are found, and the collection is reduced to a single image for each orbit number.
+    In rois that there is no single scene coverege, the function will return a Mosaic image of all the orbits. where they have no intersection, and each orbit is averaged seperatly.
+    """
+    # Create the initial collection
+    s1_collection = create_s1_collection(roi, start_date, end_date, priority_path)
+    # Get the unique orbit numbers
+    orbit_numbers = get_orbit_numbers(s1_collection)
+    # Create a list to store the images
+    image_list = []
+    # For each orbit number, reduce the collection to a single image and add it to the list
+    for orbit_number in orbit_numbers:
+        image = reduce_s1_collection(s1_collection, orbit_number)
+        image_list.append(image)
+    # Combine the images into a single image
+    combined_image = combine_images(image_list)
+    return combined_image
