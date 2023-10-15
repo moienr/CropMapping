@@ -18,6 +18,8 @@ Cehck sign: &#10007;
 | Download Dataset | &#10003;  |
 | Patch Dataset | &#10007;  |
 | Move DS to Cloab | &#10007;  |
-| Build Model | &#10007; |
+| Build Model | &#10003; |
+| Data Loader | &#10007; |
+| Train Loop | &#10007; |
 
 
