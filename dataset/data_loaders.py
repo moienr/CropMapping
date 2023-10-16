@@ -71,6 +71,7 @@ class Sen12Dataset(Dataset):
         # Set the directories for the four sets of images
         self.s1_dir = s1_dir
         self.s2_dir = s2_dir
+        self.crop_map_dir = crop_map_dir
  
         
         # Get the names of the S2 and S1 time-2 images and sort them
@@ -137,6 +138,9 @@ class Sen12Dataset(Dataset):
             if self.s2_bands: s2_img = s2_img[self.s2_bands,:,:]
             s2_images.append(s2_img)
             
+        crop_map_path = os.path.join(self.crop_map_dir,img_name)
+        crop_map = io.imread(crop_map_path)
+        if self.verbose: print(f'crop_map shape apon reading: {crop_map.shape}')
             
         if self.verbose: print(f's2 shape apon reading: {s2_img.shape}')
         if self.verbose: print(f's1 shape apon reading: {s1_img.shape}')
@@ -145,7 +149,9 @@ class Sen12Dataset(Dataset):
             s1_images = [self.s1_transform(s1_img) for s1_img in s1_images]
         if self.s2_transform:
             s2_images = [self.s2_transform(s2_img) for s2_img in s2_images]
-
+        if self.crop_map_transform:
+            crop_map = self.crop_map_transform(crop_map)
+        if self.verbose: print(f'crop_map shape apon transform: {crop_map.shape}')
                 
         
         # Stack images for 3D Convolution to shape (channels, depth, height, width)
@@ -163,13 +169,14 @@ class Sen12Dataset(Dataset):
         if self.verbose:
             print(f"stacked s1_img shape: {s1_img.shape}")
             print(f"stacked s2_img shape: {s2_img.shape}")
+            print(f"crop_map shape: {crop_map.shape}")
         
         check_tensor_values([s2_img, s1_img],
                             ["s2_img", "s1_img"])
         
         
 
-        return s1_img, s2_img
+        return s1_img, s2_img, crop_map
 
 def check_tensor_values(tensor_list, input_names):
     for i, tensor in enumerate(tensor_list):
@@ -344,7 +351,37 @@ class S2S1Normalize:
 
         return s2_img, s1_img
 
-    
+import numpy as np
+
+
+class CropMapTransform:
+    def __init__(self, crop_values=[211, 212, 213, 214, 215, 216, 217,
+                              218, 219, 221, 222, 223, 230, 231,
+                              232, 233, 240, 250, 290, 300, 500]
+                 ):
+        self.crop_values = crop_values
+
+    def __call__(self, crop_map):
+        # Convert crop map to binary bands
+        binary_bands = []
+        crop_map = crop_map.squeeze()
+        # Iterate through each crop value
+        for crop in self.crop_values:
+            # Create a binary band where crop_map equals crop value 
+            binary_band = np.where(crop_map == crop, 1, 0)
+            # Append the binary band to the list
+            binary_bands.append(binary_band)
+
+        # Stack bands along the first axis
+        result = np.stack(binary_bands, axis=0)
+
+        return result
+
+# Example usage:
+# transform = CropMapTransform()
+# crop_map = np.random.randint(low=211, high=500, size=(1, 64, 64), dtype=np.int16)
+# result = transform(crop_map)
+   
 
 
 if __name__ == "__main__":
@@ -352,6 +389,7 @@ if __name__ == "__main__":
     
     s1_transform = transforms.Compose([NormalizeS1(),myToTensor()])
     s2_transform = transforms.Compose([NormalizeS2(),myToTensor()])
+    crop_map_transform = transforms.Compose([CropMapTransform(),myToTensor(dtype=torch.int16)])
     
     print("Testing Dataset...")
     s1s2_dataset = Sen12Dataset(s1_dir="D:\\python\\CropMapping\\dataset\\ts_dataset_patched\\s1\\",
@@ -359,11 +397,13 @@ if __name__ == "__main__":
                                 crop_map_dir="D:\\python\\CropMapping\\dataset\\ts_dataset_patched\\crop_map\\",
                                 s1_transform=s1_transform,
                                 s2_transform=s2_transform,
-                                crop_map_transform=myToTensor(),
-                                verbose=False)
+                                crop_map_transform=crop_map_transform,
+                                verbose=True)
 
     print(f"Dataset length: {len(s1s2_dataset)}")
     print(f"s1_img type: {type(s1s2_dataset[0][0])}")
     print(f"s2_img type: {type(s1s2_dataset[0][1])}")
+    print(f"crop_map type: {type(s1s2_dataset[0][2])}")
     print(f"s1_img shape: {s1s2_dataset[0][0].shape}")
     print(f"s2_img shape: {s1s2_dataset[0][1].shape}")
+    print(f"crop_map shape: {s1s2_dataset[0][2].shape}")
