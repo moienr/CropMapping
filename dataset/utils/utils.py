@@ -537,9 +537,9 @@ def patch_folder(in_path, out_path, input_sat = 'S2', remove_year = True,mute = 
         for i in range(patches.shape[0]):
             for j in range(patches.shape[1]):
                 patch = patches[i,j,:,:,:]
-                if input_sat == 'S2': # reshaping to (H,W,C) so io.imsave can save it as a tif
-                    patch = np.swapaxes(patch, 2,0)
-                    patch= np.swapaxes(patch, 1,2)
+
+                patch = np.swapaxes(patch, 2,0)
+                patch= np.swapaxes(patch, 1,2)
                 #print(f'patch shape: {patch.shape}')
                 if remove_year:
                     io.imsave(out_path + img_name[:-2] + '_r'+ str(i).zfill(2) + '_c' + str(j).zfill(2) + '.tif', patch) # the [:-2] removes the year from the names
