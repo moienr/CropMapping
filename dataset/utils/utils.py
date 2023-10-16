@@ -321,7 +321,7 @@ def dict_to_int(dic):
 
 import numpy as np
 import math
-def best_step_size(img_size, patch_size = 256, ov_first_range = 32, acceptable_r = 50, mute=False):
+def best_step_size(img_size, patch_size = 64, ov_first_range = 32, acceptable_r = 50, mute=False, go_extreme=False):
     """
     inputs
     ---
@@ -339,7 +339,7 @@ def best_step_size(img_size, patch_size = 256, ov_first_range = 32, acceptable_r
     * `opt_ov` : optimum overlap which gives the least remainder value.
     """
     l = img_size
-    best_r = 255 # the maximum remainder can be 255
+    best_r = patch_size-1 # the maximum remainder can be 255
     opt_ov = 0
     for ov in range(0,ov_first_range+1): # ov from 0 to 32
         r = (l-patch_size)%(patch_size-ov)
@@ -347,7 +347,7 @@ def best_step_size(img_size, patch_size = 256, ov_first_range = 32, acceptable_r
             best_r = r
             opt_ov = ov
 
-    if best_r > acceptable_r:
+    if best_r > acceptable_r and go_extreme:
         print('extreme mode activated!')
         for ov in range(ov_first_range+1,int(patch_size/2)): # we accept maximum overlap of 128
             r = (l-patch_size)%(patch_size-ov) 
@@ -363,7 +363,7 @@ def best_step_size(img_size, patch_size = 256, ov_first_range = 32, acceptable_r
     step_size = patch_size-opt_ov #step_size = patch_size - overlaps
     return step_size , number_of_patches , opt_ov
 
-def perfect_patchify(img, patch_size=(256,256) , ov_first_range=32, acceptable_r=50,mute=True):
+def perfect_patchify(img, patch_size=(64,64) , ov_first_range=32, acceptable_r=50,mute=True):
     """
     Inputs
     ---
@@ -500,7 +500,7 @@ def count_files(folder, formart = '*.tif'):
 
 
 from skimage import io
-def patch_folder(in_path, out_path, input_sat = 'S2', remove_year = True):
+def patch_folder(in_path, out_path, input_sat = 'S2', remove_year = True,mute = False):
     if not os.path.exists(out_path):
         os.makedirs(out_path)
         
@@ -524,11 +524,11 @@ def patch_folder(in_path, out_path, input_sat = 'S2', remove_year = True):
             img[img>15] = 15
             img[img<-25] = -25
             
-        img = nan_remover(img)
+        img = nan_remover(img,replace_with=0)
 
         print("range after norm and NaN removal: ",TextColors.HIGH_INTENSITYs.CYAN,np.min(img),np.mean(img),np.std(img),np.max(img),TextColors.ENDC)
 
-        patches = perfect_patchify(img,mute=True)
+        patches = perfect_patchify(img,mute=mute)
         
         print('✅',TextColors.OKGREEN,'Final Shape->',patches.shape,TextColors.ENDC)
 
