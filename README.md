@@ -16,7 +16,7 @@ Cehck sign: &#10007;
 | Task | Status |
 |:---  |:---: |
 | Download Dataset | &#10003;  |
-| Patch Dataset | &#10007;  |
+| Patch Dataset | &#10003;  |
 | Move DS to Cloab | &#10007;  |
 | Build Model | &#10003; |
 | Data Loader | &#10007; |
