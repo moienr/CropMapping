@@ -1,9 +1,17 @@
 import os
-import dataset
+
+import numpy as np
+from PIL import Image
 import geopandas as gpd
-from sklearn.cluster import DBSCAN
 from shapely.geometry import box, Polygon
+from sklearn.cluster import DBSCAN
+from rasterio.transform import from_origin
+from rasterio.features import geometry_mask
 from khayyam import JalaliDate
+import uuid
+
+import dataset
+
 
 # Parameters
 TARGET_CRS = 'EPSG:3857'
@@ -15,9 +23,33 @@ CLUSTER_THRESHOLD = 2000
 # Minimum number of polygons necessary to form a cluster
 CLUSTER_MINIMUM_MEMBERS = 1
 
+# Mask properties
+MASK_RESOLUTION = 10  # Meter per pixel
+MINIMUM_PATCH_SIZE = 64  # Pixels
+
 # Output
 OUTPUT_DIRECTORY = 'output'
 OUTPUT_SHAPEFILE_DIRECTORY = 'shapefile'
+OUTPUT_MASKS_DIRECTORY = 'masks'
+
+
+def adjust_box_minimum_size(bounds, minimum_size=64):
+    minx, miny, maxx, maxy = bounds
+
+    width = maxx - minx
+    height = maxy - miny
+
+    if width < minimum_size:
+        difference = (minimum_size - width) / 2
+        minx -= difference
+        maxx += difference
+
+    if height < minimum_size:
+        difference = (minimum_size - height) / 2
+        miny -= difference
+        maxy += difference
+
+    return (minx, miny, maxx, maxy)
 
 
 def get_year_transition_index(months):
@@ -28,12 +60,14 @@ def get_year_transition_index(months):
 
 
 dbscan = DBSCAN(eps=CLUSTER_THRESHOLD, min_samples=CLUSTER_MINIMUM_MEMBERS)
+
 for crop, data in dataset.data.items():
     for sample in data:
 
         patches = gpd.GeoDataFrame(
             {
                 'cluster': [],
+                'uuid': [],
                 'province': [],
                 'p_start': [],
                 'p_end': [],
@@ -55,6 +89,8 @@ for crop, data in dataset.data.items():
         for cluster in gdf['cluster'].unique():
             patch_bounds = gdf[gdf['cluster'] == cluster].total_bounds
             patch_bounding_box = box(*patch_bounds)
+            patch_adjusted_bounding_box = box(
+                *adjust_box_minimum_size(patch_bounds, MINIMUM_PATCH_SIZE * MASK_RESOLUTION))
 
             province = [p['province'] for _, p in dataset.provinces.iterrows(
             ) if p.geometry.contains(patch_bounding_box)]
@@ -109,20 +145,42 @@ for crop, data in dataset.data.items():
 
             patch = {
                 'cluster': cluster,
+                'uuid': uuid.uuid4().hex,
                 'province': province,
                 'p_start': JalaliDate(dates[0][0], dates[0][1], dates[0][2]).todate().strftime('%Y-%m-%d'),
                 'p_end': JalaliDate(dates[1][0], dates[1][1], dates[1][2]).todate().strftime('%Y-%m-%d'),
                 'h_start': JalaliDate(dates[2][0], dates[2][1], dates[2][2]).todate().strftime('%Y-%m-%d'),
                 'h_end': JalaliDate(dates[3][0], dates[3][1], dates[3][2]).todate().strftime('%Y-%m-%d'),
-                'geometry': patch_bounding_box
+                'geometry': patch_adjusted_bounding_box
             }
-
             patches.loc[len(patches)] = patch
 
+        # directories
         os.makedirs(os.path.join(OUTPUT_DIRECTORY, crop,
                     OUTPUT_SHAPEFILE_DIRECTORY), exist_ok=True)
+        os.makedirs(os.path.join(OUTPUT_DIRECTORY, crop,
+                    OUTPUT_MASKS_DIRECTORY), exist_ok=True)
 
         # Output
         output_path_shapefile = os.path.join(
             OUTPUT_DIRECTORY, crop, OUTPUT_SHAPEFILE_DIRECTORY, f"{crop}.shp")
         patches.to_file(output_path_shapefile)
+
+        for _, row in patches.iterrows():
+            farms = gdf[gdf['cluster'] == row['cluster']]
+
+            minx, miny, maxx, maxy = row.geometry.bounds
+            width = int((maxx - minx) / MASK_RESOLUTION)
+            height = int((maxy - miny) / MASK_RESOLUTION)
+
+            image = np.zeros((height, width), dtype=np.uint8)
+            transform = from_origin(
+                minx, maxy, MASK_RESOLUTION, MASK_RESOLUTION)
+            mask = geometry_mask(
+                farms.geometry, transform=transform, invert=True, out_shape=(height, width))
+            image[mask] = 255
+
+            output_path_mask = os.path.join(
+                OUTPUT_DIRECTORY, crop, OUTPUT_MASKS_DIRECTORY, f"{row['uuid']}.png")
+            with Image.fromarray(image) as image:
+                image.save(output_path_mask)
