@@ -20,6 +20,9 @@ sugarbeet = gpd.read_file(
 tomato = gpd.read_file(
     'dataset/Crops/Tomato/GCP/1400-1401/Tomato_GCP_Tr_1400-1401.shp')
 
+provinces = gpd.read_file('dataset/Iran Provinces/Iran_Provinces.shp')
+
+calendar = pd.ExcelFile('dataset/Crops/CropsCalendar.xlsx')
 
 if canola.crs != PREFERRED_CRS:
     canola = canola.to_crs(PREFERRED_CRS)
@@ -44,3 +47,113 @@ if sugarbeet.crs != PREFERRED_CRS:
 
 if tomato.crs != PREFERRED_CRS:
     tomato = tomato.to_crs(PREFERRED_CRS)
+
+
+data = {
+    'canola': [
+        {
+            'gdf': canola,
+            'calendar': calendar.parse('Canola'),
+            'start_year': '1400',
+            'end_year': '1401'
+        }
+    ],
+    'cotton': [
+        {
+            'gdf': cotton,
+            'calendar': calendar.parse('Cotton'),
+            'start_year': '1400',
+            'end_year': '1401'
+        }
+    ],
+    'lentils': [
+        {
+            'gdf': lentils,
+            'calendar': calendar.parse('Lentils_Irrigated'),
+            'start_year': '1400',
+            'end_year': '1401'
+        },
+        {
+            'gdf': lentils,
+            'calendar': calendar.parse('Lentils_Autumn'),
+            'start_year': '1400',
+            'end_year': '1401'
+        }
+    ],
+    'maize': [
+        {
+            'gdf': maize,
+            'calendar': calendar.parse('Maize'),
+            'start_year': '1400',
+            'end_year': '1401'
+        }
+    ],
+    'onion': [
+        {
+            'gdf': onion,
+            'calendar': calendar.parse('Onion_Spring'),
+            'start_year': '1400',
+            'end_year': '1401'
+        },
+        {
+            'gdf': onion,
+            'calendar': calendar.parse('Onion_Summer'),
+            'start_year': '1400',
+            'end_year': '1401'
+        },
+        {
+            'gdf': onion,
+            'calendar': calendar.parse('Onion_Autumn'),
+            'start_year': '1400',
+            'end_year': '1401'
+        },
+        {
+            'gdf': onion,
+            'calendar': calendar.parse('Onion_Winter'),
+            'start_year': '1400',
+            'end_year': '1401'
+        }
+    ],
+    'pea': [
+        {
+            'gdf': pea,
+            'calendar': calendar.parse('Pea_Irrigated'),
+            'start_year': '1400',
+            'end_year': '1401'
+        },
+        {
+            'gdf': pea,
+            'calendar': calendar.parse('Pea_Autumn'),
+            'start_year': '1400',
+            'end_year': '1401'
+        }
+    ],
+    'sugarbeet': [
+        {
+            'gdf': sugarbeet[sugarbeet['Product'] == 'چغندر قند بهاره'],
+            'calendar': calendar.parse('SugarBeet_Spring'),
+            'start_year': '1400',
+            'end_year': '1401'
+        },
+        {
+            'gdf': sugarbeet[sugarbeet['Product'] == 'چغندر قند پاییزه'],
+            'calendar': calendar.parse('SugarBeet_Autumn'),
+            'start_year': '1400',
+            'end_year': '1401'
+        }
+    ],
+    'tomato': [
+        {
+            'gdf': tomato,
+            'calendar': calendar.parse('Tomato_Summer'),
+            'start_year': '1400',
+            'end_year': '1401'
+        },
+        {
+            'gdf': tomato,
+            'calendar': calendar.parse('Tomato_Winter'),
+            'start_year': '1400',
+            'end_year': '1401'
+        }
+    ]
+}
