@@ -231,7 +231,7 @@ def test_unet3d_block():
 class DualUNet3D(nn.Module):
     """ A Dual UNet3D model for Sentinel-1 and Sentinel-2 data TimeSeries Segmentation.
     """
-    def __init__(self, s1_in_channels=2, s2_in_channels=9, out_channels=10, ts_depth=6, init_features=64, sigmoid=True):
+    def __init__(self, s1_in_channels=2, s2_in_channels=9, out_channels=10, ts_depth=6, init_features=64, use_softmax=True):
         """ Initialize the Dual UNet3D model.
         Input:
         ---
@@ -246,8 +246,10 @@ class DualUNet3D(nn.Module):
         self.unet3d_s2 = UNet3DBlock(in_channels=s2_in_channels, out_channels=out_channels, ts_depth=ts_depth, init_features=init_features)
 
         self.final_conv = nn.Conv2d(init_features*2, out_channels, kernel_size=1)
+        self.use_softmax = use_softmax
+        if self.use_softmax:
+            self.softmax = nn.Softmax(dim=1)
         
-
         
     
     def forward(self, s1_img, s2_img):
@@ -265,8 +267,9 @@ class DualUNet3D(nn.Module):
         s2_feats = self.unet3d_s2(s2_img)
         feats = torch.cat((s1_feats, s2_feats), dim=1)
         feats = self.final_conv(feats)
-        
-        return F.sigmoid(feats, dim=1) if self.sigmoid else feats
+        if self.use_softmax:
+            feats = self.softmax(feats)
+        return feats
     
 def test_dual_unet_3d():
     print("Testing DualUNet3D...")
