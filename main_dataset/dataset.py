@@ -5,24 +5,24 @@ import geopandas as gpd
 PREFERRED_CRS = 'EPSG:3857'
 
 canola = gpd.read_file(
-    'dataset/Crops/Canola/GCP/1400-1401/Canola_GCP_Tr_1400-1401.shp')
+    'files/Crops/Canola/GCP/1400-1401/Canola_GCP_Tr_1400-1401.shp')
 cotton = gpd.read_file(
-    'dataset/Crops/Cotton/GCP/1400-1401/Cotton_GCP_Tr_1400-1401.shp')
+    'files/Crops/Cotton/GCP/1400-1401/Cotton_GCP_Tr_1400-1401.shp')
 lentils = gpd.read_file(
-    'dataset/Crops/Lentils/GCP/1400-1401/Lentils_GCP_Tr_1400-1401.shp')
+    'files/Crops/Lentils/GCP/1400-1401/Lentils_GCP_Tr_1400-1401.shp')
 maize = gpd.read_file(
-    'dataset/Crops/Maize/GCP/1400-1401/Maize_GCP_Tr_1400-1401.shp')
+    'files/Crops/Maize/GCP/1400-1401/Maize_GCP_Tr_1400-1401.shp')
 onion = gpd.read_file(
-    'dataset/Crops/Onion/GCP/1400-1401/Onion_GCP_Tr_1400-1401.shp')
-pea = gpd.read_file('dataset/Crops/Pea/GCP/1400-1401/Pea_GCP_Tr_1400-1401.shp')
+    'files/Crops/Onion/GCP/1400-1401/Onion_GCP_Tr_1400-1401.shp')
+pea = gpd.read_file('files/Crops/Pea/GCP/1400-1401/Pea_GCP_Tr_1400-1401.shp')
 sugarbeet = gpd.read_file(
-    'dataset/Crops/SugerBeet/GCP/1400-1401/Sugerbeet_GCP_Tr_1400-1401.shp')
+    'files/Crops/SugerBeet/GCP/1400-1401/Sugerbeet_GCP_Tr_1400-1401.shp')
 tomato = gpd.read_file(
-    'dataset/Crops/Tomato/GCP/1400-1401/Tomato_GCP_Tr_1400-1401.shp')
+    'files/Crops/Tomato/GCP/1400-1401/Tomato_GCP_Tr_1400-1401.shp')
 
-provinces = gpd.read_file('dataset/Iran Provinces/Iran_Provinces.shp')
+provinces = gpd.read_file('files/Iran Provinces/Iran_Provinces.shp')
 
-calendar = pd.ExcelFile('dataset/Crops/CropsCalendar.xlsx')
+calendar = pd.ExcelFile('files/Crops/CropsCalendar.xlsx')
 
 if canola.crs != PREFERRED_CRS:
     canola = canola.to_crs(PREFERRED_CRS)
