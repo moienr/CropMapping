@@ -321,7 +321,7 @@ def dict_to_int(dic):
 
 import numpy as np
 import math
-def best_step_size(img_size, patch_size = 64, ov_first_range = 32, acceptable_r = 50, mute=False, go_extreme=False):
+def best_step_size(img_size, patch_size = 64, ov_first_range = 32, acceptable_r = 50, mute=False, go_extreme=False, no_overlap=False):
     """
     inputs
     ---
@@ -361,9 +361,16 @@ def best_step_size(img_size, patch_size = 64, ov_first_range = 32, acceptable_r 
         print('optimum stepsize : ', patch_size-opt_ov)
         print('number of patches: ', number_of_patches)
     step_size = patch_size-opt_ov #step_size = patch_size - overlaps
+    
+    if no_overlap:
+        step_size = patch_size
+        number_of_patches = math.floor((l/patch_size))
+        opt_ov = 0
+        
+    
     return step_size , number_of_patches , opt_ov
 
-def perfect_patchify(img, patch_size=(64,64) , ov_first_range=32, acceptable_r=50,mute=True):
+def perfect_patchify(img, patch_size=(64,64) , ov_first_range=32, acceptable_r=50,mute=True, no_overlap=False):
     """
     Inputs
     ---
@@ -381,8 +388,8 @@ def perfect_patchify(img, patch_size=(64,64) , ov_first_range=32, acceptable_r=5
     """
     patch_width = patch_size[1]
     patch_hight = patch_size[0]
-    clmn_sz, clmn_n_ptchs,clmn_opt_ovl = best_step_size(img.shape[1],patch_size=patch_width, ov_first_range=ov_first_range, acceptable_r=acceptable_r,mute=mute)
-    row_sz, row_n_ptchs ,row_opt_ovl  = best_step_size(img.shape[0],patch_size=patch_hight, ov_first_range=ov_first_range, acceptable_r=acceptable_r ,mute=mute)
+    clmn_sz, clmn_n_ptchs,clmn_opt_ovl = best_step_size(img.shape[1],patch_size=patch_width, ov_first_range=ov_first_range, acceptable_r=acceptable_r,mute=mute, no_overlap=no_overlap)
+    row_sz, row_n_ptchs ,row_opt_ovl  = best_step_size(img.shape[0],patch_size=patch_hight, ov_first_range=ov_first_range, acceptable_r=acceptable_r ,mute=mute, no_overlap=no_overlap)
     stacked_rows = [] # each row consists of columns.
     for i in range(row_n_ptchs): # this loop chooses a row
         row_patches = [] # each row consists of column patches.
@@ -500,7 +507,7 @@ def count_files(folder, formart = '*.tif'):
 
 
 from skimage import io
-def patch_folder(in_path, out_path, input_sat = 'S2', remove_year = True,mute = False):
+def patch_folder(in_path, out_path, input_sat = 'S2', remove_year = True,mute = False, no_overlap=False):
     if not os.path.exists(out_path):
         os.makedirs(out_path)
         
@@ -528,7 +535,7 @@ def patch_folder(in_path, out_path, input_sat = 'S2', remove_year = True,mute = 
 
         print("range after norm and NaN removal: ",TextColors.HIGH_INTENSITYs.CYAN,np.min(img),np.mean(img),np.std(img),np.max(img),TextColors.ENDC)
 
-        patches = perfect_patchify(img,mute=mute)
+        patches = perfect_patchify(img,mute=mute, no_overlap=no_overlap)
         
         print('✅',TextColors.OKGREEN,'Final Shape->',patches.shape,TextColors.ENDC)
 
