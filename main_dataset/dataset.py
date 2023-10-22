@@ -24,6 +24,8 @@ provinces = gpd.read_file('files/Iran Provinces/Iran_Provinces.shp')
 
 calendar = pd.ExcelFile('files/Crops/CropsCalendar.xlsx')
 
+iran_roi = pd.ExcelFile('files/Iran_ROI.xlsx')
+
 if canola.crs != PREFERRED_CRS:
     canola = canola.to_crs(PREFERRED_CRS)
 

@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+import pandas as pd
 from PIL import Image
 import geopandas as gpd
 from shapely.geometry import box, Polygon
@@ -58,6 +59,9 @@ def get_year_transition_index(months):
             return i
     return -1
 
+
+combined_result = pd.DataFrame(
+    columns=['roi', 'harvest_date', 'main_type', 'country', 'uuid'])
 
 dbscan = DBSCAN(eps=CLUSTER_THRESHOLD, min_samples=CLUSTER_MINIMUM_MEMBERS)
 
@@ -153,7 +157,22 @@ for crop, data in dataset.data.items():
                 'h_end': JalaliDate(dates[3][0], dates[3][1], dates[3][2]).todate().strftime('%Y-%m-%d'),
                 'geometry': patch_adjusted_bounding_box
             }
+
+            result = {
+                'roi': [[
+                    [patch['geometry'].bounds[0], patch['geometry'].bounds[3]],
+                    [patch['geometry'].bounds[0], patch['geometry'].bounds[1]],
+                    [patch['geometry'].bounds[2], patch['geometry'].bounds[1]],
+                    [patch['geometry'].bounds[2], patch['geometry'].bounds[3]]
+                ]],
+                'harvest_date': patch['h_start'],
+                'main_type': crop,
+                'country': 'Iran',
+                'uuid': patch['uuid']
+            }
+
             patches.loc[len(patches)] = patch
+            combined_result.loc[len(combined_result)] = result
 
         # directories
         os.makedirs(os.path.join(OUTPUT_DIRECTORY, crop,
@@ -184,3 +203,7 @@ for crop, data in dataset.data.items():
                 OUTPUT_DIRECTORY, crop, OUTPUT_MASKS_DIRECTORY, f"{row['uuid']}.png")
             with Image.fromarray(image) as image:
                 image.save(output_path_mask)
+
+# Combined results
+combined_result.to_excel(os.path.join(
+    OUTPUT_DIRECTORY, f"Iran_ROI.xlsx"), index=False)
