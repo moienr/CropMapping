@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "ee-mrangzan",
+  "private_key_id": "e0965f83960a1908760bb1af60d09466a8ed9f65",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDLhc7bQnUxLUhT\nWuxD1TQNXG+FzCcBS5h5RgiuBmMLJa4XyXnOjdrECyKgDHu+HnIeHkXcaz964mxy\nn6Nqf+wXBeYIP4FPtU21BtYn5zTNp4XNp5AeJEGDYYSMOIfrRvgVtTWHmt1cW3Tc\nZvkPdEyGb2rUyKFDmcgP8zLPl5iR1/fqxJoMvdpaQR4bjyiMhYug32qa3YB1Lg87\nzk5EcjZx6VnTmW7iNH/bF0/gC6MvSsgGWLMA9FixzL8iAZT8q/hGBXsC82kzEhRx\n/YXv2yAyVOXS2Emtqmly5AvXkrm3qLZrf5sxNGyJ4p1UvTUvPDlAdI3RWgQwYCbb\nTdD60ccrAgMBAAECggEAHFkkgXzlxvZIOzgQbbheOjg0Xn4btr35XHcJUXgZRp22\nfKC3IzK2FJV6erGScN5bxd8wmu2jV3H/ag3bXMO5tlE/g8mYsOoPi1YK8V7uh3C8\nnfMni1NAftTP+hoLsJVfi+KENMG48JrakbKUIXdxC06sojvZ3okmiTY2Tx0OBs4/\nJmp74FfFPgz1x6uV/rS2IRET7LtfSrOGcQqjU3I3oM2LgEHym+0WWVx+yTPbUue1\npWatwoBgHwvbyhjs/f7qxxBb0ptVwSbxQuTVHFDrhlivr4OlB+Gc7pUmNdujayGj\nV5GmM7kFQv5fed9fzbX6vTKKO1nUV5/tqjKdTu3rqQKBgQDmKJSWq8wXkL5AJkAa\nqI+Rqp4DtvHAG9cEYAl2yMVcnDRh89LIWNPeh+omwyq5w6nUvOT7jEN0oPHKiJt3\ngLVaJoG6Yob/aICwO71/vfljG/xh+NkleuKO+rD5wFwr+vTHgNMuFfLTPcOyCub0\npDSew1OtZ3Dn4FL1423NZVQgaQKBgQDiX6MVbg0EbeK57piUwpUotBuZSnELRD3z\n+QCp0zakqaitK5vGYllCyja0mSptsmIEoQnYivCscVPNRMizk//oFvxGXqC0iwO+\nUm6FZgAy672u2fkuR4sSvAH4qyZO8/ZJRM6spNHtio6a9qJr+x0g8OLqUPpL0hHz\nXbHzlWZ4cwKBgEhj+SBO1rmOwBgjL8Rywf1aAas/blgzKXTp0/A1g8X2J4+rhd+X\n+MOkUiRw/E5DWXZdF1R7MHhNat9+ChATPnclZ2Y9OSK6Nse3consMbVXhxE1mO7t\n8LZx6RoUw6jdnQHm5gU3yBFi+ttUDIJj510MKJSA1YVJDC7kopOYzFYJAoGARAFH\nFOECuBnqysCKxeXOuXOh9uMOIrxVgD2FnX7+I2l0atF28poJBq+Iz6hTvrCgEZPv\nSUY0FxnUew323TvQ3QBKuTkkPhik/z/0Q87osGNxkF2bJfQIK5CfZvzDfWR80HYD\nQIojJqFBRfxhvt6pWYQEJzA8gRqSmfHDy9FN/1ECgYAvfkMDeqT1/wP0zccqgC7c\nUYrtDuadd7z8dy/88IqdwwypnKEOuNdEuY7ceBxfeqrXhhqLikvXfltx6PAJ4TGx\nJ0nk3HngS+/WMTfSJJaMxA8UkZVXUIIc287xT9Px4/qfHLMRkeUAXcYqaZMh5/Ht\nHph/qzxhACFkodPbBoXfxw==\n-----END PRIVATE KEY-----\n",
+  "client_email": "kaggle@ee-mrangzan.iam.gserviceaccount.com",
+  "client_id": "116340737132149317132",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/kaggle%40ee-mrangzan.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
