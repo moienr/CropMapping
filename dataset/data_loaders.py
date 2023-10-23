@@ -28,7 +28,18 @@ def get_all_files(path:str, file_type=None)->list:
             
     return file_list
 
-
+def find_difference(list1, list2):
+    """Find the difference between two lists."""
+    # Use list comprehension to find elements in list1 that are not in list2
+    difference1 = [item for item in list1 if item not in list2]
+    
+    # Use list comprehension to find elements in list2 that are not in list1
+    difference2 = [item for item in list2 if item not in list1]
+    
+    # Concatenate the two differences to get the complete list of different elements
+    result = difference1 + difference2
+    
+    return result
 
 
 class Sen12Dataset(Dataset):
@@ -76,24 +87,31 @@ class Sen12Dataset(Dataset):
         
         # Get the names of the S2 and S1 time-2 images and sort them
         self.s1_dates = os.listdir(s1_dir)
+        self.s1_dates.sort()
         self.num_dates = len(self.s1_dates)
         self.s2_dates = os.listdir(s2_dir)
+        self.s2_dates.sort()
         self.file_names= get_all_files(self.s1_dir + "//" + self.s1_dates[0])
         self.file_names.sort()
         
-        assert_names = self.file_names= get_all_files(self.s2_dir + "//" + self.s2_dates[3])
-        
+        self.file_names= get_all_files(self.s2_dir + "//" + self.s2_dates[3])
+        self.file_names.sort()
+        assertion_names = get_all_files(self.s2_dir + "//" + self.s2_dates[0])
+        assertion_names.sort()
         crop_map_names = get_all_files(crop_map_dir)
         crop_map_names.sort()
         
         
         # Verify that the four sets of images have the same names
         if self.s1_dates != self.s2_dates:
-            raise ValueError("Same dates are not present in the S1 and S2 directories.")
-        if self.file_names != assert_names:
-            raise ValueError("Directories do not contain the same image pairs.")
+            diff = find_difference(self.s1_dates, self.s2_dates)
+            raise ValueError(f"S1 and S2 directories do not contain the same dates | Diffrencce: {diff}")
+        if self.file_names != assertion_names:
+            diff = find_difference(self.file_names, assertion_names)
+            raise ValueError(f"S2 date directories do not contain the same image pairs | Diffrencce: {diff}")
         if self.file_names != crop_map_names:
-            raise ValueError("Image and Crop Map Directories do not contain the same image pairs.")
+            diff = find_difference(self.file_names, crop_map_names)
+            raise ValueError(f"S2 date directories do not contain the same image pairs | Diffrencce: {diff}")
         
         
         self.s2_bands = s2_bands if s2_bands else None 
