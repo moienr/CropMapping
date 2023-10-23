@@ -93,10 +93,8 @@ class Sen12Dataset(Dataset):
         self.s2_dates.sort()
         self.file_names= get_all_files(self.s1_dir + "//" + self.s1_dates[0])
         self.file_names.sort()
-        
-        self.file_names= get_all_files(self.s2_dir + "//" + self.s2_dates[3])
-        self.file_names.sort()
-        assertion_names = get_all_files(self.s2_dir + "//" + self.s2_dates[0])
+
+        assertion_names = get_all_files(self.s2_dir + "//" + self.s2_dates[3])
         assertion_names.sort()
         crop_map_names = get_all_files(crop_map_dir)
         crop_map_names.sort()
@@ -105,13 +103,13 @@ class Sen12Dataset(Dataset):
         # Verify that the four sets of images have the same names
         if self.s1_dates != self.s2_dates:
             diff = find_difference(self.s1_dates, self.s2_dates)
-            raise ValueError(f"S1 and S2 directories do not contain the same dates | Diffrencce: {diff}")
+            raise ValueError(f"S1 and S2 directories do not contain the same dates | Diff Len: {len(diff)} | Diffrencce: {diff}")
         if self.file_names != assertion_names:
             diff = find_difference(self.file_names, assertion_names)
-            raise ValueError(f"S2 date directories do not contain the same image pairs | Diffrencce: {diff}")
+            raise ValueError(f"S2 date directories do not contain the same image pairs | Diff Len: {len(diff)} | Diffrencce: {diff}")
         if self.file_names != crop_map_names:
             diff = find_difference(self.file_names, crop_map_names)
-            raise ValueError(f"S2 date directories do not contain the same image pairs | Diffrencce: {diff}")
+            raise ValueError(f"S1 and S2 directories do not contain the same image pairs as Cropmap | Diff Len: {len(diff)} | Diffrencce: {diff}")
         
         
         self.s2_bands = s2_bands if s2_bands else None 
