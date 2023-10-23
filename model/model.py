@@ -231,7 +231,7 @@ def test_unet3d_block():
 class DualUNet3D(nn.Module):
     """ A Dual UNet3D model for Sentinel-1 and Sentinel-2 data TimeSeries Segmentation.
     """
-    def __init__(self, s1_in_channels=2, s2_in_channels=9, out_channels=10, ts_depth=6, init_features=64, use_softmax=True):
+    def __init__(self, s1_in_channels=2, s2_in_channels=9, out_channels=10, ts_depth=6, init_features=64, non_lin="sigmoid"):
         """ Initialize the Dual UNet3D model.
         Input:
         ---
@@ -239,16 +239,24 @@ class DualUNet3D(nn.Module):
         s2_in_channels (int): The number of input channels for Sentinel-2 data (default: 9 | 10m bands)
         out_channels (int): Number of ouput Classes, default: 10
         ts_depth (int): The depth of the kernel. Should be the same as the depth of the input (i.e. the number of time steps in TimeSeries)
-        
+        non_lin (str): The non-linearity to use for the final layer. Default: "sigmoid" (sigmoid or softmax, or None)
         """
         super().__init__()
         self.unet3d_s1 = UNet3DBlock(in_channels=s1_in_channels, out_channels=out_channels, ts_depth=ts_depth, init_features=init_features)
         self.unet3d_s2 = UNet3DBlock(in_channels=s2_in_channels, out_channels=out_channels, ts_depth=ts_depth, init_features=init_features)
 
         self.final_conv = nn.Conv2d(init_features*2, out_channels, kernel_size=1)
-        self.use_softmax = use_softmax
-        if self.use_softmax:
-            self.softmax = nn.Softmax(dim=1)
+        if non_lin == "sigmoid":
+            self.non_lin = nn.Sigmoid()
+        elif non_lin == "softmax":
+            self.non_lin = nn.Softmax(dim=1)
+        else:
+            self.non_lin = None
+            
+        
+
+
+            
         
         
     
@@ -267,8 +275,8 @@ class DualUNet3D(nn.Module):
         s2_feats = self.unet3d_s2(s2_img)
         feats = torch.cat((s1_feats, s2_feats), dim=1)
         feats = self.final_conv(feats)
-        if self.use_softmax:
-            feats = self.softmax(feats)
+        if self.non_lin is not None:
+            feats = self.non_lin(feats)
         return feats
     
 def test_dual_unet_3d():
