@@ -253,13 +253,6 @@ class DualUNet3D(nn.Module):
         else:
             self.non_lin = None
             
-        
-
-
-            
-        
-        
-    
     def forward(self, s1_img, s2_img):
         """ Forward pass of the Dual UNet3D model.
         Input:
