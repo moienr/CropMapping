@@ -17,10 +17,11 @@ Cehck sign: &#10007;
 |:---  |:---: |
 | Download Dataset | &#10003;  |
 | Patch Dataset | &#10003;  |
-| Move DS to Cloab | &#10007;  |
+| Move EU DS to Kaggle | &#10003;  |
+| Creata Fine-Tune Dataset in Kaggle | &#10007; |
 | Build Model | &#10003; |
 | Data Loader | &#10003; |
 | Train Loop | &#10003; |
 | Test On Local | &#10003; |
-| Move to Kaggle | &#10007; |
+| Move to Kaggle | &#10003; |
 
