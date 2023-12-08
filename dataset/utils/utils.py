@@ -321,7 +321,8 @@ def dict_to_int(dic):
 
 import numpy as np
 import math
-def best_step_size(img_size, patch_size = 64, ov_first_range = 32, acceptable_r = 50, mute=False, go_extreme=False, no_overlap=False):
+def best_step_size(img_size, patch_size = 64, ov_first_range = 32, acceptable_r = 16,
+                   mute=False, go_extreme=True, no_overlap=False):
     """
     inputs
     ---
@@ -348,7 +349,7 @@ def best_step_size(img_size, patch_size = 64, ov_first_range = 32, acceptable_r 
             opt_ov = ov
 
     if best_r > acceptable_r and go_extreme:
-        print('extreme mode activated!')
+        print('Extreme mode activated! (Can be disabled by setting go_extreme=False)')
         for ov in range(ov_first_range+1,int(patch_size/2)): # we accept maximum overlap of 128
             r = (l-patch_size)%(patch_size-ov) 
             if r<best_r:
@@ -377,7 +378,10 @@ def perfect_patchify(img, patch_size=(64,64) , ov_first_range=32, acceptable_r=5
     * `img`: a 3D numpy array of `(rows,columns,channels)`
     * `patch_size`: size of each patch `(row_size,column_size)`
     * `ov_first_range` , `acceptable_r` , `mute`: arguments of funcion `best_step_size` to caclutate optimum `step_size`
-    
+    * `acceptable_r`: the threshold of remainder, where the extreme mode activates.
+    * `mute`: if False, prints the optimum step size and number of patches.
+    * `no_overlap`: if True, the patches will have no overlap.(overrides the `ov_first_range` and `acceptable_r` arguments)
+     
     Workflow
     ---
     note that image `width` corresponds to number of columns, and `hight` refers to the number of rows.
