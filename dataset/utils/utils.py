@@ -557,5 +557,50 @@ def patch_folder(in_path, out_path, input_sat = 'S2', remove_year = True,mute = 
                 else:
                     io.imsave(out_path + img_name + '_r'+ str(i).zfill(2) + '_c' + str(j).zfill(2) + '.tif', patch)
 
+
+
+from skimage import transform
+def resize_masks(images_path, masks_path):
+    """
+    Resize masks to match the shape of the corresponding images.
+
+    Args:
+        images_path (str): Path to the directory containing the images.
+        masks_path (str): Path to the directory containing the masks.
+
+    Raises:
+        Exception: If the images and masks lists are not the same length.
+        Exception: If the image shape is not 3D or 2D.
+        Exception: If the mask shape is not 2D.
+    """
+    images_list = sorted(os.listdir(images_path))
+    masks_list = sorted(os.listdir(masks_path))
+    
+    if images_list != masks_list:
+        raise Exception("Images and masks are not the same")
+    
+    for image_name, mask_name in zip(images_list, masks_list):
+        image_path = os.path.join(images_path, image_name)
+        mask_path = os.path.join(masks_path, mask_name)
+        image = io.imread(image_path)
+        if len(image.shape) == 3:
+            image = image[0]
+        if len(image.shape) > 2:
+            raise Exception("Image shape is not 3D or 2D")
+        mask = io.imread(mask_path)
+        if len(mask.shape) > 2:
+            raise Exception("Mask shape is not 2D")
+        
+        print(f"Image shape: {image.shape}, Mask shape: {mask.shape}")
+        
+        # resize mask to image shape
+        resized_mask = transform.resize(mask, image.shape)
+        
+        print(f"Resized mask shape: {resized_mask.shape}")
+        io.imsave(mask_path, resized_mask)
+
+
+
+
 if __name__ == "__main__":
     patch_folder(in_path = 'E:\s1s2\s1s2\content\drive\MyDrive\TemporalGAN-main\dataset\s1s2\\2021\s1_imgs\\test\\', out_path = 'E:\s1s2\s1s2\content\drive\MyDrive\TemporalGAN-main\dataset\s1s2_patched\\2021\s1_imgs\\test\\', input_sat = 'S1')
