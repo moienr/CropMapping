@@ -380,7 +380,7 @@ def perfect_patchify(img, patch_size=(64,64) , ov_first_range=32, acceptable_r=5
     * `ov_first_range` , `acceptable_r` , `mute`: arguments of funcion `best_step_size` to caclutate optimum `step_size`
     * `acceptable_r`: the threshold of remainder, where the extreme mode activates.
     * `mute`: if False, prints the optimum step size and number of patches.
-    * `no_overlap`: if True, the patches will have no overlap.(overrides the `ov_first_range` and `acceptable_r` arguments)
+    * `no_overlap`: if True, the patches will have no overlap.(overrides finding the best step size)
      
     Workflow
     ---
