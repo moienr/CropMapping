@@ -560,13 +560,15 @@ def patch_folder(in_path, out_path, input_sat = 'S2', remove_year = True,mute = 
 
 
 from skimage import transform
-def resize_masks(images_path, masks_path):
+from tqdm import tqdm
+def resize_masks(images_path, masks_path, verbose=False):
     """
     Resize masks to match the shape of the corresponding images.
 
     Args:
         images_path (str): Path to the directory containing the images.
         masks_path (str): Path to the directory containing the masks.
+        verbose (bool, optional): Whether to print the shapes of the images and masks. Defaults to False.
 
     Raises:
         Exception: If the images and masks lists are not the same length.
@@ -577,9 +579,9 @@ def resize_masks(images_path, masks_path):
     masks_list = sorted(os.listdir(masks_path))
     
     if images_list != masks_list:
-        raise Exception("Images and masks are not the same")
+        raise Exception(f"Images and masks are not the same. Images: {len(images_list)}, Masks: {len(masks_list)}")
     
-    for image_name, mask_name in zip(images_list, masks_list):
+    for image_name, mask_name in tqdm(zip(images_list, masks_list), total=len(images_list), desc="Resizing masks"):
         image_path = os.path.join(images_path, image_name)
         mask_path = os.path.join(masks_path, mask_name)
         image = io.imread(image_path)
@@ -591,12 +593,11 @@ def resize_masks(images_path, masks_path):
         if len(mask.shape) > 2:
             raise Exception("Mask shape is not 2D")
         
-        print(f"Image shape: {image.shape}, Mask shape: {mask.shape}")
+        verbose and print(f"Image shape: {image.shape}, Mask shape: {mask.shape}")
         
         # resize mask to image shape
         resized_mask = transform.resize(mask, image.shape)
-        
-        print(f"Resized mask shape: {resized_mask.shape}")
+        verbose and print(f"Resized mask shape: {resized_mask.shape}")
         io.imsave(mask_path, resized_mask)
 
 
