@@ -8,6 +8,7 @@ from torchvision import datasets, transforms
 from skimage import data
 from skimage import exposure
 from skimage.exposure import match_histograms
+import random
 # from changedetection.utils import get_binary_change_map
 
 def get_all_files(path:str, file_type=None)->list:
@@ -52,6 +53,7 @@ class Sen12Dataset(Dataset):
                s1_transform = None,
                s2_transform = None,
                crop_map_transform = None,
+               augmentation = None,
                verbose=False):
         """
         Args
@@ -83,7 +85,7 @@ class Sen12Dataset(Dataset):
         self.s1_dir = s1_dir
         self.s2_dir = s2_dir
         self.crop_map_dir = crop_map_dir
- 
+        self.augmentation = augmentation
         
         # Get the names of the S2 and S1 time-2 images and sort them
         self.s1_dates = os.listdir(s1_dir)
@@ -168,7 +170,9 @@ class Sen12Dataset(Dataset):
         if self.crop_map_transform:
             crop_map = self.crop_map_transform(crop_map)
         if self.verbose: print(f'crop_map shape apon transform: {crop_map.shape}')
-                
+               
+        if self.augmentation:
+             s1_images, s2_images, crop_map = self.augmentation(s1_images, s2_images, crop_map)
         
         # Stack images for 3D Convolution to shape (channels, depth, height, width)
         s1_img = torch.stack(s1_images , dim=1)
@@ -207,12 +211,12 @@ def check_tensor_values(tensor_list, input_names):
         
 class myToTensor:
     """Transform a pair of numpy arrays to PyTorch tensors"""
-    def __init__(self,dtype=torch.float16):
+    def __init__(self,dtype=torch.float32):
         """Transform a pair of numpy arrays to PyTorch tensors
         
         Args
         ---
-            `dtype` (torch.dtype): Data type for the output tensor (default: torch.float16)
+            `dtype` (torch.dtype): Data type for the output tensor (default: torch.float32)
         """
         self.dtype = dtype
         
@@ -397,12 +401,76 @@ class CropMapTransform:
 # transform = CropMapTransform()
 # crop_map = np.random.randint(low=211, high=500, size=(1, 64, 64), dtype=np.int16)
 # result = transform(crop_map)
+
+class CropMapTransformIran:
+    def __init__(self, crop_type = None
+                 ):
+        self.crop_type = crop_type
+
+    def __call__(self, crop_map):
+        
+        crop_map[crop_map < 0.1] == 0
+        crop_map[crop_map > 0.1] == 1
+        
+        return crop_map
+        
+        
+        
+        # Convert crop map to binary bands
+        binary_bands = []
+        crop_map = crop_map.squeeze()
+        # Iterate through each crop value
+        for crop in self.crop_values:
+            # Create a binary band where crop_map equals crop value 
+            binary_band = np.where(crop_map == crop, 1, 0)
+            # Append the binary band to the list
+            binary_bands.append(binary_band)
+
+        # Stack bands along the first axis
+        result = np.stack(binary_bands, axis=0)
+
+        return result
    
 
+import torch
+from torchvision import transforms
+from PIL import Image
 
-if __name__ == "__main__":
-    from utils.plot_utils import *
-    
+class Augmentations:
+    """
+    Data Augmentation Class
+    This class applies the same augmentation to three images simultaneously.
+    The images are padded, randomly flipped, rotated, and then cropped.
+    """
+    def __init__(self, aug_prob=0.5, out_shape=(64, 64)):
+        self.aug_prob = aug_prob
+        self.padding = out_shape[0] // 4
+        self.out_shape = out_shape
+        self.transforms = transforms.Compose([
+            transforms.Pad((self.padding, self.padding), padding_mode='reflect'),
+            transforms.RandomHorizontalFlip(p=aug_prob),
+            transforms.RandomVerticalFlip(p=aug_prob),
+            transforms.RandomRotation((0,90)),
+            transforms.CenterCrop(size=self.out_shape)
+        ])
+
+    def __call__(self, s1_img_list, s2_img_list, mask):
+        # Generate a random seed based on which the transformations will be applied
+        seed = int(torch.randint(1,1000, size=(1,)).item())
+        print(f"seed: {int(seed)}")
+        # Apply the same transformations to each image/mask based on the generated seed
+        def apply_transform(seed, img):
+            torch.manual_seed(seed)
+            random.seed(seed) 
+            return self.transforms(img)
+        s1_img_list = [apply_transform(seed, img) for img in s1_img_list]
+        s2_img_list = [apply_transform(seed, img) for img in s2_img_list]
+        mask_aug = apply_transform(seed, mask)
+
+        return s1_img_list, s2_img_list, mask_aug
+
+
+def test_eu():
     s1_transform = transforms.Compose([NormalizeS1(),myToTensor()])
     s2_transform = transforms.Compose([NormalizeS2(),myToTensor()])
     crop_map_transform = transforms.Compose([CropMapTransform(),myToTensor(dtype=torch.int16)])
@@ -423,3 +491,48 @@ if __name__ == "__main__":
     print(f"s1_img shape: {s1s2_dataset[0][0].shape}")
     print(f"s2_img shape: {s1s2_dataset[0][1].shape}")
     print(f"crop_map shape: {s1s2_dataset[0][2].shape}")
+    
+def test_iran():
+    s1_transform = transforms.Compose([NormalizeS1(),myToTensor()])
+    s2_transform = transforms.Compose([NormalizeS2(),myToTensor()])
+    crop_map_transform = transforms.Compose([CropMapTransformIran(),myToTensor(dtype=torch.int16)])
+    augmentation = Augmentations()
+    print("Testing Dataset...")
+    s1s2_dataset = Sen12Dataset(s1_dir="D:\\Datasets\\crop_map_dataset_Iran_tomato\\s1\\",
+                                s2_dir="D:\\Datasets\\crop_map_dataset_Iran_tomato\\\s2\\",
+                                crop_map_dir="D:\\Datasets\\crop_map_dataset_Iran_tomato\\crop_map\\",
+                                s1_transform=s1_transform,
+                                s2_transform=s2_transform,
+                                crop_map_transform=crop_map_transform,
+                                augmentation=augmentation,
+                                verbose=False)
+
+    print(f"Dataset length: {len(s1s2_dataset)}")
+    print(f"s1_img type: {type(s1s2_dataset[0][0])}")
+    print(f"s2_img type: {type(s1s2_dataset[0][1])}")
+    print(f"crop_map type: {type(s1s2_dataset[0][2])}")
+    print(f"s1_img shape: {s1s2_dataset[0][0].shape}")
+    print(f"s2_img shape: {s1s2_dataset[0][1].shape}")
+    print(f"crop_map shape: {s1s2_dataset[0][2].shape}")
+    idx = 2
+    img1 = s1s2_dataset[idx][0][1,3,:,:]
+    img2 = s1s2_dataset[idx][1][0,3,:,:]
+    img3 = s1s2_dataset[idx][2][0,:,:]
+    # plot in subplots
+    plt.figure(figsize=(15,15))
+    plt.subplot(131)
+    plt.imshow(img1)
+    plt.subplot(132)
+    plt.imshow(img2)
+    plt.subplot(133)
+    plt.imshow(img3)
+    plt.show()
+    
+    
+
+if __name__ == "__main__":
+    from utils.plot_utils import *
+    # print("TEST EU")
+    # test_eu()
+    print("TEST IRAN")
+    test_iran()    
