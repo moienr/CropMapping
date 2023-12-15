@@ -403,33 +403,46 @@ class CropMapTransform:
 # result = transform(crop_map)
 
 class CropMapTransformIran:
-    def __init__(self, crop_type = None
+    def __init__(self, crop_type=None, crops_list=["canola", "cotton", "lentils", "maize",
+                                                   "onion", "pea", "sugarbeet", "tomato"]
                  ):
+        """
+        Initializes an instance of CropMapTransformIran.
+        
+        Args:
+        ---
+            crop_type (str, optional): The type of crop. Defaults to None. (If None, it returns a binary map. Else, it returns a multi-channel map.)
+            crops_list (list, optional): The list of crop types. Defaults to ["canola", "cotton", "lentils", "maize",
+                                       "onion", "pea", "sugarbeet", "tomato"].
+        """
         self.crop_type = crop_type
+        self.crops_list = crops_list
+        if crop_type:
+            self.crop_index = crops_list.index(crop_type)
 
     def __call__(self, crop_map):
-        
-        crop_map[crop_map < 0.01] == 0
-        crop_map[crop_map > 0.01] == 1
-        
+        """
+        Applies the crop map transformation.
+
+        Args:
+        ---
+            crop_map (numpy.ndarray): The input crop map.
+
+        Returns:
+        ---
+            numpy.ndarray: The transformed crop map.
+                If crop_type is None, it returns a binary single-channel map.
+                Otherwise, it returns a multi-channel map where the index in the list is the map and others are zero.
+        """
+        crop_map[crop_map < 0.01] = 0
+        crop_map[crop_map > 0.01] = 1
+
+        if self.crop_type:
+            crop_map = np.zeros((len(self.crops_list), crop_map.shape[0], crop_map.shape[1]))
+            crop_map[self.crop_index] = crop_map
+
         return crop_map
-        
-        
-        
-        # Convert crop map to binary bands
-        binary_bands = []
-        crop_map = crop_map.squeeze()
-        # Iterate through each crop value
-        for crop in self.crop_values:
-            # Create a binary band where crop_map equals crop value 
-            binary_band = np.where(crop_map == crop, 1, 0)
-            # Append the binary band to the list
-            binary_bands.append(binary_band)
 
-        # Stack bands along the first axis
-        result = np.stack(binary_bands, axis=0)
-
-        return result
    
 
 import torch
