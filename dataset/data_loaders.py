@@ -441,6 +441,25 @@ class Augmentations:
     Data Augmentation Class
     This class applies the same augmentation to three images simultaneously.
     The images are padded, randomly flipped, rotated, and then cropped.
+    
+    Warning: When using the Dataset, make sure to call it only once for each image. For instance:
+    ```
+    idx = 2
+    s1s2 = s1s2_dataset[idx]
+    img1 = s1s2[0][1,3,:,:]
+    img2 = s1s2[1][1,3,:,:]
+    img3 = s1s2[2][0,:,:]
+    ```
+    
+    but if you use it like this:
+    ```
+    idx = 2
+    img1 = s1s2_dataset[idx][0][1,3,:,:]
+    img2 = s1s2_dataset[idx][1][1,3,:,:]
+    img3 = s1s2_dataset[idx][2][0,:,:]
+    ```
+    you will get 3 images with 3 different augmentations.
+    
     """
     def __init__(self, aug_prob=0.5, out_shape=(64, 64)):
         self.aug_prob = aug_prob
