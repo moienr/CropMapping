@@ -61,7 +61,7 @@ def test_conv3d():
 
 class DoubleConv(nn.Module):
     def __init__(self, in_channels, out_channels):
-        super(DoubleConv, self).__init__()
+        super().__init__()
         self.conv = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, 3, 1, 1, bias=False),
             nn.BatchNorm2d(out_channels),
@@ -73,6 +73,9 @@ class DoubleConv(nn.Module):
 
     def forward(self, x):
         return self.conv(x)
+    
+
+
     
 
 
@@ -272,6 +275,42 @@ class DualUNet3D(nn.Module):
             feats = self.non_lin(feats)
         return feats
     
+class DoubleConvEnd(nn.Module):
+    def __init__(self, in_channels, mid_channels, out_channels):
+        super().__init__()
+        self.conv = nn.Sequential(
+            nn.Conv2d(in_channels, mid_channels, 3, 1, 1),
+            nn.BatchNorm2d(mid_channels),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(mid_channels, out_channels,kernel_size=1),
+        )
+
+    def forward(self, x):
+        return self.conv(x)
+class IranCropModel(nn.Module):
+    """This will be used to finetune DualUNet3D, it changes the `final_conv` and last `non_lin` layer."""
+    
+    def __init__(self, out_channels = 1, dualunet3d:DualUNet3D = None, non_lin=nn.Sigmoid()):
+        super().__init__()
+        self.final_conv = DoubleConvEnd(64*2, 32, out_channels)
+        self.non_lin = non_lin
+        self.out_channels = out_channels
+        self.dualunet3d = dualunet3d
+    
+    def forward(self, s1_img, s2_img):
+        s1_feats = self.dualunet3d.unet3d_s1(s1_img)
+        s2_feats = self.dualunet3d.unet3d_s2(s2_img)
+        feats = torch.cat((s1_feats, s2_feats), dim=1)
+        feats = self.final_conv(feats)
+        if self.non_lin is not None:
+            feats = self.non_lin(feats)
+        return feats
+        
+        
+        
+
+
+    
 def test_dual_unet_3d():
     print("Testing DualUNet3D...")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -285,12 +324,34 @@ def test_dual_unet_3d():
     print(f"Shape of preds: {preds.shape}")
     print("Success!")
 
-  
-
+def test_iran_crop_model():
+    print("Testing IranCropModel...")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Device: {device}")
+    s1_img = torch.randn((3, 2, 6, 64, 64)).to(device)
+    s2_img = torch.randn((3, 10, 6, 64, 64)).to(device)
+    dualunet3d = DualUNet3D(s1_in_channels=2, s2_in_channels=10, out_channels=21,ts_depth=6,non_lin='sigmoid').to(device)
+    
+    # Load the state dict from the file
+    state_dict = torch.load("D:\\python\CropMapping\\model\\StateDict_epoch11_EU.pth")
+    
+    # Load the state dict into the model
+    dualunet3d.load_state_dict(state_dict)
+    
+    model = IranCropModel(dualunet3d=dualunet3d).to(device)
+    preds = model(s1_img, s2_img)
+    print(f"Shape of s1_img: {s1_img.shape}")
+    print(f"Shape of s2_img: {s2_img.shape}")
+    print(f"Shape of preds: {preds.shape}")
+    print("Success!")
 
 if __name__ == "__main__":
+    # print current dir
+    import os
+    print(os.getcwd())
+    print(os.listdir("./model/"))
     test_conv3d()
     test_unet_block()
     test_unet3d_block()
     test_dual_unet_3d()
-    
+    test_iran_crop_model()
