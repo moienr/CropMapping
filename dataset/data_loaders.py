@@ -409,8 +409,8 @@ class CropMapTransformIran:
 
     def __call__(self, crop_map):
         
-        crop_map[crop_map < 0.1] == 0
-        crop_map[crop_map > 0.1] == 1
+        crop_map[crop_map < 0.01] == 0
+        crop_map[crop_map > 0.01] == 1
         
         return crop_map
         
@@ -457,7 +457,7 @@ class Augmentations:
     def __call__(self, s1_img_list, s2_img_list, mask):
         # Generate a random seed based on which the transformations will be applied
         seed = int(torch.randint(1,1000, size=(1,)).item())
-        print(f"seed: {int(seed)}")
+        # print(f"seed: {int(seed)}")
         # Apply the same transformations to each image/mask based on the generated seed
         def apply_transform(seed, img):
             torch.manual_seed(seed)
@@ -469,6 +469,39 @@ class Augmentations:
 
         return s1_img_list, s2_img_list, mask_aug
 
+
+# from torchvision.transforms import functional as F
+
+# class Augmentations:
+#     def __init__(self, out_shape=(64, 64)):
+#         self.padding = out_shape[0] // 4
+#         self.out_shape = out_shape
+
+#     def __call__(self, s1_img_list, s2_img_list, mask):
+#         # seed = int(torch.randint(1, 1000, size=(1,)).item())
+#         flip_horizontal = bool(torch.randint(0, 2, size=(1,)).item())
+#         flip_vertical = bool(torch.randint(0, 2, size=(1,)).item())
+#         rotation_angle = int(torch.randint(0, 91, size=(1,)).item())
+
+#         def apply_transform(img, flip_horizontal, flip_vertical, rotation_angle):
+#             # torch.manual_seed(seed)
+#             # random.seed(seed)
+#             img = F.pad(img, (self.padding, self.padding), padding_mode='reflect')
+#             if flip_horizontal:
+#                 img = F.hflip(img)
+#             if flip_vertical: 
+#                 img = F.vflip(img)
+#             img = F.rotate(img, rotation_angle)
+#             img = F.center_crop(img, self.out_shape)
+#             return img
+        
+#         apply_t = lambda img: apply_transform(img, flip_horizontal, flip_vertical, rotation_angle)
+
+#         s1_img_list = [apply_t(img) for img in s1_img_list]
+#         s2_img_list = [apply_t(img) for img in s2_img_list]
+#         mask_aug = apply_t(mask)
+
+#         return s1_img_list, s2_img_list, mask_aug
 
 def test_eu():
     s1_transform = transforms.Compose([NormalizeS1(),myToTensor()])
@@ -515,17 +548,18 @@ def test_iran():
     print(f"s2_img shape: {s1s2_dataset[0][1].shape}")
     print(f"crop_map shape: {s1s2_dataset[0][2].shape}")
     idx = 2
-    img1 = s1s2_dataset[idx][0][1,3,:,:]
-    img2 = s1s2_dataset[idx][1][0,3,:,:]
-    img3 = s1s2_dataset[idx][2][0,:,:]
+    s1s2 = s1s2_dataset[idx]
+    img1 = s1s2[0][1,3,:,:]
+    img2 = s1s2[1][1,3,:,:]
+    img3 = s1s2[2][0,:,:]
     # plot in subplots
-    plt.figure(figsize=(15,15))
+    plt.figure(figsize=(15,10))
     plt.subplot(131)
-    plt.imshow(img1)
+    plt.imshow(img1,cmap='gray')
     plt.subplot(132)
-    plt.imshow(img2)
+    plt.imshow(img2,cmap='gray')
     plt.subplot(133)
-    plt.imshow(img3)
+    plt.imshow(img3,cmap='gray')
     plt.show()
     
     
