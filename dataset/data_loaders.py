@@ -533,7 +533,7 @@ class Augmentations:
 
 class BalancedSampler(torch.utils.data.sampler.Sampler):
     """ Samples only `ratio` of the data from empty masks (majority class) and all the data from non-empty masks (minority class)"""
-    def __init__(self, dataset, ratio=0.1, verbose= True):
+    def __init__(self, dataset, ratio=0.1, shuffle = False, verbose= True):
         """ Samples only `ratio` of the data from empty masks (majority class) and all the data from non-empty masks (minority class)
         Input:
         ---
@@ -541,6 +541,7 @@ class BalancedSampler(torch.utils.data.sampler.Sampler):
             ratio (float): The ratio of the majority class to be sampled. Default is 0.1.
         """
         self.verbose = verbose
+        self.shuffle = shuffle
         self.dataset = dataset
         self.ratio = ratio
         self.empty_mask_indices, self.non_empty_mask_indices = self.get_empty_and_nonempty_mask_indices()
@@ -565,6 +566,7 @@ class BalancedSampler(torch.utils.data.sampler.Sampler):
     def __iter__(self):
         empty_mask_indices = random.sample(self.empty_mask_indices, k=int(self.num_empty_mask_indices * self.ratio))
         indices = empty_mask_indices + self.non_empty_mask_indices
+        self.shuffle and random.shuffle(indices) # shuffle indices if shuffle is True
         return iter(indices)
     
     def __len__(self):
