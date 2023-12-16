@@ -533,25 +533,26 @@ class Augmentations:
 
 class BalancedSampler(torch.utils.data.sampler.Sampler):
     """ Samples only `ratio` of the data from empty masks (majority class) and all the data from non-empty masks (minority class)"""
-    def __init__(self, dataset, ratio=0.1):
+    def __init__(self, dataset, ratio=0.1, verbose= True):
         """ Samples only `ratio` of the data from empty masks (majority class) and all the data from non-empty masks (minority class)
         Input:
         ---
             dataset (Sen12Dataset): The dataset to be sampled.
             ratio (float): The ratio of the majority class to be sampled. Default is 0.1.
         """
+        self.verbose = verbose
         self.dataset = dataset
         self.ratio = ratio
         self.empty_mask_indices, self.non_empty_mask_indices = self.get_empty_and_nonempty_mask_indices()
         self.num_empty_mask_indices = len(self.empty_mask_indices)
         self.num_non_empty_mask_indices = len(self.non_empty_mask_indices)
         self.num_samples = int(self.num_empty_mask_indices * self.ratio) + self.num_non_empty_mask_indices
-    
+        
     def get_empty_and_nonempty_mask_indices(self):
         empty_mask_indices = []
         non_empty_mask_indices = []
         for i in range(len(self.dataset)):
-            i%10==0 and print(f"Getting empty and non-empty mask indices: {i}/{len(self.dataset)}", end="\r")
+            self.verbose and print(f"Getting empty and non-empty mask indices: {i}/{len(self.dataset)}", end="\r")
             crop_map = self.dataset[i][2]
             if crop_map.sum() == 0:
                 empty_mask_indices.append(i)
@@ -641,8 +642,9 @@ def test_iran():
                                 crop_map_transform=crop_map_transform,
                                 augmentation=augmentation,
                                 verbose=False)
-    
-    sampler = BalancedSampler(s1s2_dataset, ratio=0.1)
+    print("Creating Sampler Object...")
+    sampler = BalancedSampler(s1s2_dataset, ratio=0.1, verbose=True)
+    print("Creating DataLoader Object...")
     data_loader = torch.utils.data.DataLoader(s1s2_dataset, batch_size=1, sampler=sampler)
     print(f"Dataset length: {len(s1s2_dataset)}")
     print(f"Len of data_loader after sampling: {len(data_loader)}")
