@@ -153,3 +153,101 @@ def train(model, train_loader, valid_loader, criterion, optimizer, scheduler_typ
             pass
         
     return results
+
+
+def binary_mask_accuracy(predicted, true, threshold=0.3, channel=0):
+    """ Calculates the metrics, for a single image, given the predicted and true binary masks.
+    Parameters:
+        - predicted: torch.Tensor with shape (num_channels, height, width)
+        - true: torch.Tensor with shape (num_channels, height, width)
+        - threshold: float, the threshold to apply to the predicted mask
+        - channel: int, the channel to select from the predicted and true mask (default: 0, useful for multiclass masks)
+    Returns:
+        - acc_dict: dict, a dictionary with the accuracy, true positive rate (recall), true negative rate, precision and f1 score
+    """
+    predicted = predicted[channel, :, :]  # select the channel
+    true = true[channel, :, :]  # select the channel
+    predicted = predicted > threshold  # apply a threshold to the predicted mask
+    true_positive = ((predicted == 1) & (true == 1)).sum().item()  # count the number of true positives
+    true_negative = ((predicted == 0) & (true == 0)).sum().item()  # count the number of true negatives
+    false_positive = ((predicted == 1) & (true == 0)).sum().item()  # count the number of false positives
+    false_negative = ((predicted == 0) & (true == 1)).sum().item()  # count the number of false negatives
+    accuracy = (true_positive + true_negative) / (true_positive + true_negative + false_positive + false_negative)  # calculate the accuracy
+
+    recall = true_positive / (true_positive + false_negative)  # calculate the recall or true positive rate
+    true_negative_rate = true_negative / (true_negative + false_positive)  # calculate the true negative rate
+    precision = true_positive / (true_positive + false_positive)  # calculate the precision
+    f1_score = 2 * precision * recall / (precision + recall)  # calculate the f1 score
+    acc_dict = {"accuracy": accuracy,
+                "recall (true_positive_rate)": recall,
+                "true_negative_rate": true_negative_rate,
+                "precision": precision,
+                "f1_score": f1_score}
+    return acc_dict
+
+
+def calculate_dataset_metrics(data_loaders, model, threshold=0.4, channel= 0):
+    """
+    Calculates various metrics for a given dataset using a trained model.
+
+    Parameters:
+    - data_loaders (dict): A dictionary containing the data loaders for different datasets.
+    - model: The trained model to evaluate.
+    - threshold (float): The threshold value for binarizing the model's output.
+    - channel (int): The channel index to consider for evaluation.
+
+    Returns:
+    - metrics (dict): A dictionary containing the calculated metrics for each dataset.
+      The metrics include accuracy, true positive rate, true negative rate, precision, recall, and F1 score.
+    """
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    model.eval()
+    
+    metrics = {}
+    
+    with torch.no_grad():
+        for name, loader in data_loaders.items():
+            correct = 0
+            total = 0
+            true_positive = 0
+            true_negative = 0
+            false_positive = 0
+            false_negative = 0
+            
+            for batch in loader:
+                s1_img = batch[0].to(device)
+                s2_img = batch[1].to(device)
+                crop_map = batch[2].to(device)
+                output = model(s1_img, s2_img)
+                
+                crop_map = crop_map[:, channel, :, :].cpu().detach()
+                output = output[:, channel, :, :].cpu().detach()
+
+                output[output >= threshold] = 1
+                output[output < threshold] = 0
+                
+                correct += (output == crop_map).sum().item()
+                total += crop_map.numel()
+                true_positive += ((output == 1) & (crop_map == 1)).sum().item()
+                true_negative += ((output == 0) & (crop_map == 0)).sum().item()
+                false_positive += ((output == 1) & (crop_map == 0)).sum().item()
+                false_negative += ((output == 0) & (crop_map == 1)).sum().item()
+            
+            accuracy = (correct / total) if total > 0 else 0
+
+            recall = (true_positive / (true_positive + false_negative)) if (true_positive + false_negative) > 0 else 0
+            true_negative_rate = (true_negative / (true_negative + false_positive)) if (true_negative + false_positive) > 0 else 0
+            precision = (true_positive / (true_positive + false_positive)) if (true_positive + false_positive) > 0 else 0
+            f1_score = (2 * precision * recall / (precision + recall)) if (precision + recall) > 0 else 0
+            
+            metrics[name] = {
+                "accuracy": accuracy,
+                "true_positive_rate (recall)": recall,
+                "true_negative_rate": true_negative_rate,
+                "precision": precision,
+                "f1_score": f1_score
+            }
+    
+    model.train()
+    return metrics
