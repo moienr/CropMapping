@@ -129,13 +129,14 @@ def plot_s2_img(s2_img, n, m):
     plt.show()
     
 
-def plot_output_crop_map(output, crop_map):
+def plot_output_crop_map(output, crop_map, colorbar=False):
     """
     Plot the model output and crop map side by side for each band
     
     Args:
     - output: the model output tensor of shape (21, 64, 64)
     - crop_map: the crop map tensor of shape (21, 64, 64)
+    - colorbar: whether to include color bar in the subplots (default: False)
     
     Returns:
     - None
@@ -146,12 +147,17 @@ def plot_output_crop_map(output, crop_map):
         fig, axs = plt.subplots(1, 2, figsize=(10, 5))
 
         # Plot the model output in the first subplot
-        axs[0].imshow(output[i], cmap='gray')
+        im1 = axs[0].imshow(output[i], cmap='gray')
         axs[0].set_title(f'Band {i+1} - Model Output')
 
         # Plot the crop map in the second subplot
-        axs[1].imshow(crop_map[i], cmap='gray')
+        im2 = axs[1].imshow(crop_map[i], cmap='gray')
         axs[1].set_title(f'Band {i+1} - Crop Map')
+
+        # Add color bar to subplots if colorbar is True
+        if colorbar:
+            fig.colorbar(im1, ax=axs[0])
+            fig.colorbar(im2, ax=axs[1])
 
         # Show the plot
         plt.show()
