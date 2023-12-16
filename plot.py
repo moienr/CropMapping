@@ -88,6 +88,73 @@ def display_images(array1, array2, names, title, figsize = (10,5), savepath=None
     if savepath:
         plt.savefig(savepath, bbox_inches='tight')
     plt.show()
+    
+    
+import matplotlib.pyplot as plt
+
+def plot_s2_img(s2_img, n, m):
+    """
+    Plot an image for each depth of the s2_img tensor, by plotting the first 3 channels as an RGB image.
+    
+    Args:
+    - s2_img: a tensor of shape (D, C, H, W)
+    - n: number of rows in the subplot
+    - m: number of columns in the subplot
+    
+    Returns:
+    - None
+    """
+    # Move the tensor to the CPU and detach it
+    s2_img = s2_img.cpu().detach()
+    
+    # Permute the tensor to have shape (D, H, W, C)
+    s2_img = s2_img.permute(1, 2, 3, 0)
+    
+    # Create a new figure
+    fig = plt.figure(figsize=(m*5, n*5))
+    
+    # Loop over the depths and plot an image for each depth
+    for d in range(s2_img.shape[0]):
+        # Extract the first 3 channels as an RGB image
+        rgb_img = s2_img[d, :, :, :3]
+        # reveser rgb channels
+        rgb_img = rgb_img[:, :, [2, 1, 0]]
+        
+        # Plot the RGB image in a subplot
+        ax = fig.add_subplot(n, m, d+1)
+        ax.imshow(rgb_img)
+        ax.set_title(f"Depth {d}")
+    
+    # Show the plot
+    plt.show()
+    
+
+def plot_output_crop_map(output, crop_map):
+    """
+    Plot the model output and crop map side by side for each band
+    
+    Args:
+    - output: the model output tensor of shape (21, 64, 64)
+    - crop_map: the crop map tensor of shape (21, 64, 64)
+    
+    Returns:
+    - None
+    """
+    # Loop over the bands
+    for i in range(output.shape[0]):
+        # Create a figure with two subplots
+        fig, axs = plt.subplots(1, 2, figsize=(10, 5))
+
+        # Plot the model output in the first subplot
+        axs[0].imshow(output[i], cmap='gray')
+        axs[0].set_title(f'Band {i+1} - Model Output')
+
+        # Plot the crop map in the second subplot
+        axs[1].imshow(crop_map[i], cmap='gray')
+        axs[1].set_title(f'Band {i+1} - Crop Map')
+
+        # Show the plot
+        plt.show()
 
 if __name__ == "__main__":
     train_losses = np.random.random((10, 100)) * np.geomspace(100, 1, num=100, endpoint=True)  /100 
