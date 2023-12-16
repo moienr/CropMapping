@@ -29,6 +29,9 @@ def get_all_files(path:str, file_type=None)->list:
             
     return file_list
 
+
+
+
 def find_difference(list1, list2):
     """Find the difference between two lists."""
     # Use list comprehension to find elements in list1 that are not in list2
@@ -41,6 +44,33 @@ def find_difference(list1, list2):
     result = difference1 + difference2
     
     return result
+
+def mask_fill_percentage(path, image_shape=(64,64))->list:
+    """ Returns the percentage of pixels that are not zero in the mask images in the specified directory.
+    """
+    image_files = [file for file in os.listdir(path) if file.endswith('.tif')]
+    # print(f"len of image files: {len(image_files)}")
+    pixel_sums = []
+    for image_file in image_files:
+        image_path = os.path.join(path, image_file)
+        image = io.imread(image_path)
+        pixel_sum = image.sum()
+        pixel_sums.append(pixel_sum)
+    pixel_avgs = [(pixel_sum*100) / (image_shape[0] * image_shape[1]) for pixel_sum in pixel_sums]
+    return pixel_avgs
+
+
+def find_empty_masks(path:str, file_type=".tif")->list:
+    """returns the names of the empty masks in the specified directory"""
+    empty_masks = []
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            if file.endswith(file_type):
+                file_path = os.path.join(root, file)
+                image = io.imread(file_path)
+                if image.sum() == 0:
+                    empty_masks.append(file_path)
+    return empty_masks
 
 
 class Sen12Dataset(Dataset):
@@ -501,6 +531,46 @@ class Augmentations:
 
         return s1_img_list, s2_img_list, mask_aug
 
+class BalancedSampler(torch.utils.data.sampler.Sampler):
+    """ Samples only `ratio` of the data from empty masks (majority class) and all the data from non-empty masks (minority class)"""
+    def __init__(self, dataset, ratio=0.1):
+        """ Samples only `ratio` of the data from empty masks (majority class) and all the data from non-empty masks (minority class)
+        Input:
+        ---
+            dataset (Sen12Dataset): The dataset to be sampled.
+            ratio (float): The ratio of the majority class to be sampled. Default is 0.1.
+        """
+        self.dataset = dataset
+        self.ratio = ratio
+        self.empty_mask_indices, self.non_empty_mask_indices = self.get_empty_and_nonempty_mask_indices()
+        self.num_empty_mask_indices = len(self.empty_mask_indices)
+        self.num_non_empty_mask_indices = len(self.non_empty_mask_indices)
+        self.num_samples = int(self.num_empty_mask_indices * self.ratio) + self.num_non_empty_mask_indices
+    
+    def get_empty_and_nonempty_mask_indices(self):
+        empty_mask_indices = []
+        non_empty_mask_indices = []
+        for i in range(len(self.dataset)):
+            i%10==0 and print(f"Getting empty and non-empty mask indices: {i}/{len(self.dataset)}", end="\r")
+            crop_map = self.dataset[i][2]
+            if crop_map.sum() == 0:
+                empty_mask_indices.append(i)
+            else :
+                non_empty_mask_indices.append(i)
+            
+        return empty_mask_indices, non_empty_mask_indices
+
+    
+    def __iter__(self):
+        empty_mask_indices = random.sample(self.empty_mask_indices, k=int(self.num_empty_mask_indices * self.ratio))
+        indices = empty_mask_indices + self.non_empty_mask_indices
+        return iter(indices)
+    
+    def __len__(self):
+        return self.num_samples
+
+
+
 
 # from torchvision.transforms import functional as F
 
@@ -571,8 +641,11 @@ def test_iran():
                                 crop_map_transform=crop_map_transform,
                                 augmentation=augmentation,
                                 verbose=False)
-
+    
+    sampler = BalancedSampler(s1s2_dataset, ratio=0.1)
+    data_loader = torch.utils.data.DataLoader(s1s2_dataset, batch_size=1, sampler=sampler)
     print(f"Dataset length: {len(s1s2_dataset)}")
+    print(f"Len of data_loader after sampling: {len(data_loader)}")
     print(f"s1_img type: {type(s1s2_dataset[0][0])}")
     print(f"s2_img type: {type(s1s2_dataset[0][1])}")
     print(f"crop_map type: {type(s1s2_dataset[0][2])}")
