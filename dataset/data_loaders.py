@@ -519,44 +519,65 @@ class Augmentations:
 
         return s1_img_list, s2_img_list, mask_aug
 
+import pickle
+
+import os
+
 class BalancedSampler(torch.utils.data.sampler.Sampler):
     """ Samples only `ratio` of the data from empty masks (majority class) and all the data from non-empty masks (minority class)"""
-    def __init__(self, dataset, ratio=0.1, shuffle = False, verbose= True):
+    def __init__(self, dataset, ratio=0.1, shuffle=False, verbose=True, save_indices_file=None,
+                 load_indices_file=None):
         """ Samples only `ratio` of the data from empty masks (majority class) and all the data from non-empty masks (minority class)
         Input:
         ---
             dataset (Sen12Dataset): The dataset to be sampled.
             ratio (float): The ratio of the majority class to be sampled. Default is 0.1.
+            save_indices_file (str): File path to save the indices as a .pkl file. Default is None. (If None, calculates the indices)
+            load_indices_file (str): File path to load the indices from a .pkl file. Default is None. (If None, calculates the indices)
         """
         self.verbose = verbose
         self.shuffle = shuffle
         self.dataset = dataset
         self.ratio = ratio
-        self.empty_mask_indices, self.non_empty_mask_indices = self.get_empty_and_nonempty_mask_indices()
+        self.save_indices_file = save_indices_file
+        self.load_indices_file = load_indices_file
+        self.empty_mask_indices, self.non_empty_mask_indices = self.load_indices() if load_indices_file else self.calculate_indices()
         self.num_empty_mask_indices = len(self.empty_mask_indices)
         self.num_non_empty_mask_indices = len(self.non_empty_mask_indices)
         self.num_samples = int(self.num_empty_mask_indices * self.ratio) + self.num_non_empty_mask_indices
         
-    def get_empty_and_nonempty_mask_indices(self):
+    def calculate_indices(self):
         empty_mask_indices = []
         non_empty_mask_indices = []
         for i in range(len(self.dataset)):
-            self.verbose and print(f"Getting empty and non-empty mask indices: {i}/{len(self.dataset)}", end="\r")
+            self.verbose and print(f"Calculating empty and non-empty mask indices: {i}/{len(self.dataset)}", end="\r")
             crop_map = self.dataset[i][2]
             if crop_map.sum() == 0:
                 empty_mask_indices.append(i)
-            else :
+            else:
                 non_empty_mask_indices.append(i)
-            
+        
+        if self.save_indices_file:
+            if os.path.splitext(self.save_indices_file)[1] != '.pkl':
+                raise ValueError("Invalid file name format. File name should have .pkl extension.")
+            with open(self.save_indices_file, 'wb') as f:
+                pickle.dump((empty_mask_indices, non_empty_mask_indices), f)
+        
+        return empty_mask_indices, non_empty_mask_indices
+    
+    def load_indices(self):
+        if os.path.splitext(self.load_indices_file)[1] != '.pkl':
+            raise ValueError("Invalid file name format. File name should have .pkl extension.")
+        with open(self.load_indices_file, 'rb') as f:
+            empty_mask_indices, non_empty_mask_indices = pickle.load(f)
         return empty_mask_indices, non_empty_mask_indices
 
-    
     def __iter__(self):
         empty_mask_indices = random.sample(self.empty_mask_indices, k=int(self.num_empty_mask_indices * self.ratio))
         indices = empty_mask_indices + self.non_empty_mask_indices
-        self.shuffle and random.shuffle(indices) # shuffle indices if shuffle is True
+        self.shuffle and random.shuffle(indices)  # shuffle indices if shuffle is True
         return iter(indices)
-    
+
     def __len__(self):
         return self.num_samples
 
