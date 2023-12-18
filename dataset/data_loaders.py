@@ -432,6 +432,8 @@ class CropMapTransformIran:
         self.crop_type = crop_type
         self.crops_list = crops_list
         if crop_type:
+            if crop_type not in crops_list:
+                raise ValueError(f"crop_type must be one of {crops_list}")
             self.crop_index = crops_list.index(crop_type)
 
     def __call__(self, crop_map):
