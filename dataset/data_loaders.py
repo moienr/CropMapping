@@ -454,8 +454,10 @@ class CropMapTransformIran:
         crop_map[crop_map > 0.01] = 1
 
         if self.crop_type:
+            crop_map = crop_map.squeeze()
+            crop_map_copy = crop_map.copy()
             crop_map = np.zeros((len(self.crops_list), crop_map.shape[0], crop_map.shape[1]))
-            crop_map[self.crop_index] = crop_map
+            crop_map[self.crop_index] = crop_map_copy
 
         return crop_map
 
