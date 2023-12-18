@@ -86,29 +86,18 @@ class Sen12Dataset(Dataset):
                augmentation = None,
                verbose=False):
         """
-        Args
-        ---
-            `s1_t2_dir` (str): Path to the directory containing the S1 time-2 images.
-            `s2_t2_dir` (str): Path to the directory containing the S2 time-2 images.
-            `s1_t1_dir` (str): Path to the directory containing the S1 time-1 images.
-            `s2_t1_dir` (str): Path to the directory containing the S2 time-1 images.
-            `s2_bands` (list, optional): List of indices indicating which bands to use from the S2 images.
-                                       If not specified, all bands are used.
-            `transform` (callable, optional): Optional transform to be applied to the S2 images.
-           ` hist_match` (bool, optional): Whether to perform histogram matching between the S2 time-2 
-                                         and S2 time-1 images.
-            `two_way` (bool, optional): is used to determine whether to return images from both time directions (i.e. time-2 to time-1 and time-1 to time-2). If two_way=True, __len__ returns twice the number of images in the dataset, with the first half of the indices corresponding to the time-2 to time-1 direction and the second half corresponding to the time-1 to time-2 direction.
-            `binary_s1cm` (bool, optional): Whether to return the binary change map for the S1 images.
-            
-        
-        __getitem__ Return
-        ---
-            `(s2_t2_img, s1_t2_img, s2_t1_img, s1_t1_img, diff_map, reversed_diff_map)` or `(s2_t1_img, s1_t1_img, s2_t2_img, s1_t2_img, diff_map, reversed_diff_map)` if reversed index
-             
-            tuple: A tuple containing the `S2 time-2` image, `S1 time-2` image, `S2 time-1` image, `S1 time-1` image, Difference map and Reversed difference map.
-            * `Difference map`: `np.abs(s2_t2_img - s2_t1_img)`
-            * `Reversed difference map`: `np.max(diff_map) - diff_map + np.min(diff_map) `
-            *  when reversed is activated the index `i` in a reversed mode has the index `len(dataset) - i`
+        Initialize the Sen12Dataset.
+
+        Args:
+            s1_dir (str): Directory path for S1 images.
+            s2_dir (str): Directory path for S2 images.
+            crop_map_dir (str): Directory path for crop map images.
+            s2_bands (list, optional): List of indices of S2 bands to use. Defaults to None.
+            s1_transform (callable, optional): Transform to apply on S1 images. Defaults to None.
+            s2_transform (callable, optional): Transform to apply on S2 images. Defaults to None.
+            crop_map_transform (callable, optional): Transform to apply on crop map images. Defaults to None.
+            augmentation (callable, optional): Augmentation function to apply on images. Defaults to None.
+            verbose (bool, optional): Whether to print verbose output. Defaults to False.
         """
         self.verbose = verbose
         # Set the directories for the four sets of images
@@ -156,20 +145,15 @@ class Sen12Dataset(Dataset):
         return len(self.file_names)
 
     def __getitem__(self, index):
-        """Get the S2 time-2 image, S1 time-2 image, S2 time-1 image, S1 time-1 image, 
-           difference map and reversed difference map for the specified index.
-           
-        Args:
-            index (int): Index of the image to get.
-            
-        Returns:
-            tuple: A tuple containing the S2 time-2 image, S1 time-2 image, S2 time-1 image, S1 time-1 image, Difference map and Reversed difference map.
-            * Difference map: `s2_t2_img - s2_t1_img` Values are in the range [-1, 1].
-            * Reversed difference map: 1 - torch.abs(diff_map)  Values are in the range [0, 1].
-            * S1_abs_diff_map: `abs(s1_t2_img - s1_t1_img)` Values are in the range [0, 1].
         """
+        Get the item at the given index.
 
+        Args:
+            index (int): Index of the item.
 
+        Returns:
+            tuple: A tuple containing the S1 image, S2 image, and crop map. Each a Tensor with shape (channels, height, width).
+        """
         img_name = self.file_names[index] 
 
         if self.verbose: print(f"Image name: {img_name}")  
