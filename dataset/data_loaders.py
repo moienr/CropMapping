@@ -550,7 +550,9 @@ class BalancedSampler(torch.utils.data.sampler.Sampler):
         empty_mask_indices = []
         non_empty_mask_indices = []
         for i in range(len(self.dataset)):
-            self.verbose and print(f"Calculating empty and non-empty mask indices: {i}/{len(self.dataset)}", end="\r")
+            self.verbose and print(f"Calculating empty and non-empty mask indices: {i+1}/{len(self.dataset)}", end="\r")
+            print("")
+            
             crop_map = self.dataset[i][2]
             if crop_map.sum() == 0:
                 empty_mask_indices.append(i)
