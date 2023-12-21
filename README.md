@@ -30,8 +30,14 @@ This procedure enables the model to learn the features of the ISRC dataset while
 
 # How to use
 
+## Dataset
+A through explaination of how build a dataset from gournd truth shapefiles is provided in [main_dataset/README.md](./main_dataset/README.md)
+
+## Evaluation
+After building the dataset, you can evaluate the model on the dataset using the following command:
+
 ```bash
 > conda activate pytorch_env
-> python evaluate.py --eval_crop "tomato" --dataset_dir_path <path to dataset> --trained_model_path <path to trained model>
+> python eval.py --eval_crop <crop_to_be_evaluated> --dataset_dir_path <path to dataset> --trained_model_path <path to trained model>
 ```
 
