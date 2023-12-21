@@ -129,7 +129,7 @@ def plot_s2_img(s2_img, n, m):
     plt.show()
     
 
-def plot_output_crop_map(output, crop_map, colorbar=False):
+def plot_output_crop_map(output, crop_map, colorbar=False, band_names: list = None):
     """
     Plot the model output and crop map side by side for each band
     
@@ -148,11 +148,17 @@ def plot_output_crop_map(output, crop_map, colorbar=False):
 
         # Plot the model output in the first subplot
         im1 = axs[0].imshow(output[i], cmap='gray')
-        axs[0].set_title(f'Band {i+1} - Model Output')
+        if band_names:
+            axs[0].set_title(f'{band_names[i]} - Model Output')
+        else:
+            axs[0].set_title(f'Band {i+1} - Model Output')
 
         # Plot the crop map in the second subplot
         im2 = axs[1].imshow(crop_map[i], cmap='gray')
-        axs[1].set_title(f'Band {i+1} - Crop Map')
+        if band_names:
+            axs[1].set_title(f'{band_names[i]} - Crop Map')
+        else:
+            axs[1].set_title(f'Band {i+1} - Crop Map')
 
         # Add color bar to subplots if colorbar is True
         if colorbar:
