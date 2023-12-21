@@ -174,10 +174,10 @@ def binary_mask_accuracy(predicted, true, threshold=0.3, channel=0):
     false_negative = ((predicted == 0) & (true == 1)).sum().item()  # count the number of false negatives
     accuracy = (true_positive + true_negative) / (true_positive + true_negative + false_positive + false_negative)  # calculate the accuracy
 
-    recall = true_positive / (true_positive + false_negative)  # calculate the recall or true positive rate
-    true_negative_rate = true_negative / (true_negative + false_positive)  # calculate the true negative rate
-    precision = true_positive / (true_positive + false_positive)  # calculate the precision
-    f1_score = 2 * precision * recall / (precision + recall)  # calculate the f1 score
+    recall = true_positive / (true_positive + false_negative)  if (true_positive + false_negative) > 0 else 0 # calculate the recall
+    true_negative_rate = true_negative / (true_negative + false_positive)  if (true_negative + false_positive) > 0 else 0 # calculate the true negative rate
+    precision = true_positive / (true_positive + false_positive)  if (true_positive + false_positive) > 0 else 0 # calculate the precision
+    f1_score = 2 * precision * recall / (precision + recall)  if (precision + recall) > 0 else 0 # calculate the f1 score
     acc_dict = {"accuracy": accuracy,
                 "recall (true_positive_rate)": recall,
                 "true_negative_rate": true_negative_rate,
@@ -215,7 +215,8 @@ def calculate_dataset_metrics(data_loaders, model, threshold=0.4, channel= 0):
             false_positive = 0
             false_negative = 0
             
-            for batch in loader:
+            for k, batch in enumerate(loader):
+                print(f"Batch {k + 1} / {len(loader)}", end="\r")
                 s1_img = batch[0].to(device)
                 s2_img = batch[1].to(device)
                 crop_map = batch[2].to(device)
