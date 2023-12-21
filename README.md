@@ -1,27 +1,7 @@
 
-# CropMapping
+# CropMapping of Partially Anotated Time Series Satellite Images with 3D Convolutional Neural Networks
 
-<!-- 
-Cehck sign: &#10003;
-Cehck sign: &#10007; 
--->
+This repository contains the code for Iran's Space Research Center's CropMapping competition. The goal of the competition was to predict the crop type of a given time series of satellite images at least one month before the harvest. 
 
-## Mamad
-| Task | Status |
-|:--- |:---:|
-| Task 1 | &#10003; |
-| Task 2 | &#10007; |
 
-## Moien
-| Task | Status |
-|:---  |:---: |
-| Download Dataset | &#10003;  |
-| Patch Dataset | &#10003;  |
-| Move EU DS to Kaggle | &#10003;  |
-| Creata Fine-Tune Dataset in Kaggle | &#10007; |
-| Build Model | &#10003; |
-| Data Loader | &#10003; |
-| Train Loop | &#10003; |
-| Test On Local | &#10003; |
-| Move to Kaggle | &#10003; |
 
