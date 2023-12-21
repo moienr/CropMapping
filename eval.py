@@ -24,7 +24,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--eval_crop", "-ec", type=str, default="tomato", help="Crop type for evaluation")
-parser.add_argument("--dir_path", "-dp", type=str, default="./crop_map_dataset_Iran_tomato/"
+parser.add_argument("--dataset_dir_path", "-dp", type=str, default="./crop_map_dataset_Iran_tomato/"
                     , help="Directory path of Crop Dataset")
 parser.add_argument("--batch_size", "-bs", type=int, default=16, help="Batch size (keep the same as training)")
 parser.add_argument("--save_sampler_file", "-ss", type=bool, default=True, help="Save sampler file or not")
@@ -34,7 +34,7 @@ parser.add_argument("--threshold", "-th", type=float, default=0.35, help="Thresh
 args = parser.parse_args()
 
 EVAL_CROP = args.eval_crop
-DIR_PATH = args.dir_path
+DIR_PATH = args.dataset_dir_path
 BATCH_SIZE = args.batch_size
 SAVE_SAMPLER_FILE = args.save_sampler_file
 SAVE_SAMPLER_FILE_PATH = f"./results/samplers/{EVAL_CROP}_sampler_indices.pkl" if SAVE_SAMPLER_FILE else None
