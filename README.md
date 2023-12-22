@@ -31,16 +31,16 @@ This procedure enables the model to learn the features of the ISRC dataset while
 # How to use
 
 **Clone the Repository**:
-   ```bash
+```bash
    git clone https://github.com/moienr/CropMapping.git
-   ```
+```
 
 **Create the Environments**:
 
-    ```bash
-    conda env create -f environment.yml
-    conda env create -f pytorch_env.yml
-    ```
+```bash
+    conda env create -f geemap_reqs.yml
+    conda env create -f pytorch_reqs.yml
+```
 
 
 
@@ -59,5 +59,47 @@ After building the dataset, you can evaluate the model on the dataset using the 
 > conda activate pytorch_env
 > python eval.py --eval_crop <crop_to_be_evaluated> --dataset_dir_path <path to dataset> --trained_model_path <path to trained model> -th <threshold>
 ```
+
+**Note**: The dataset to that is used for evaluation must be fully annotated, for the metics to be calculated correctly.
+
+
+### Example:
+
+We can see that even though the ground truth is not fully annotated, the model can still predict the crop type of the un-annotated tomato field.
+
+![Tomato Image](./readme/tomato_img.jpg)
+
+![Tomato Mask](./readme/tomato_msk.jpg)
+
+
+
+
+
+---
+---
+
+# How to fine-tune the model on your own dataset
+Create the datasets for all the crops you want to train on using [Dataset Generator Notebook](./dataset/iran_ds_generator.ipynb).
+
+In the [`config.py`](./config.py) set the paths to the datasets you want to train on (read the comments in the file for more information):
+
+```python
+DATASET_DIRS = ["./irandatasetcanolav1/",
+                "./irandatasetcottonv1/",
+                "./irandatasetlentilsv1/",
+                "./irandatasetmaizev1/",
+                "./irandatasetonionv1/",
+                "./irandatastpeav1/",
+                "./irandatasetsugarbeetv1/",
+                "./irandatasettomatov1/"]
+```
+
+Then run the following command to train the model:
+
+```bash
+> conda activate pytorch_env
+> python finetune.py --num_epoch <number of epochs> --batch_size <batch size> ----save_model_dir <path to save the model> 
+```
+
 
 
