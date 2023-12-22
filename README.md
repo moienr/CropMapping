@@ -98,7 +98,7 @@ Then run the following command to train the model:
 
 ```bash
 > conda activate pytorch_env
-> python finetune.py --num_epoch <number of epochs> --batch_size <batch size> ----save_model_dir <path to save the model> 
+> python finetune.py --num_epoch <number of epochs> --batch_size <batch size> --save_model_dir <path to save the model> 
 ```
 
 
