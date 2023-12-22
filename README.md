@@ -47,8 +47,16 @@ This procedure enables the model to learn the features of the ISRC dataset while
 
 ## Dataset
 
+The ISRC dataset is a in the form of a shapefile, for each crop, and an exel file containg the harvest time of each crop for each province of Iran.
+
+In order to trnsfrom this dataset into a Image segmentation dataset, we converted the shapefiles into binary mases, and a clustering algorithm was used to cluster ROIs that were close to each other.
+
+Then a Timseres of Sentinel-1 and Sentinel-2 images were downloaded for each ROI, and the images were patched into `64x64` patches.
+
+### Clustering and Shapefile to Mask Conversion
 A thorough explanation of how to build a dataset from ground truth shapefiles is provided in [main_dataset/README.md](./main_dataset/README.md)
 
+### Downloading the Time Series Images
 Then the new dataset ["main_dataset/output/Iran_ROI.xlsx"](./main_dataset/output/Iran_ROI.xlsx) can be downloaded using [Dataset Generator Notebook](./dataset/iran_ds_generator.ipynb).
 
 
