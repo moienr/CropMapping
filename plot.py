@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 
 def plot_train_test_losses(train_losses:np.array, test_losses:np.array, title="Train Test Loss",
-                           x_label="Epochs", y_label="Bianry Cross Entropy Loss",
+                           x_label="Epochs", y_label="Loss",
                            min_max_bounds= True,
                            tight_x_lim = True, y_lim=None,
                            train_legend = "Train", test_legend = "Test",
@@ -129,7 +129,7 @@ def plot_s2_img(s2_img, n, m):
     plt.show()
     
 
-def plot_output_crop_map(output, crop_map, colorbar=False, band_names: list = None):
+def plot_output_crop_map(output, crop_map, colorbar=False, band_names: list = None, fig_name: str = None):
     """
     Plot the model output and crop map side by side for each band
     
@@ -137,6 +137,8 @@ def plot_output_crop_map(output, crop_map, colorbar=False, band_names: list = No
     - output: the model output tensor of shape (21, 64, 64)
     - crop_map: the crop map tensor of shape (21, 64, 64)
     - colorbar: whether to include color bar in the subplots (default: False)
+    - band_names: list of band names (default: None)
+    - fig_name: name of the figure (default: None)
     
     Returns:
     - None
@@ -164,6 +166,10 @@ def plot_output_crop_map(output, crop_map, colorbar=False, band_names: list = No
         if colorbar:
             fig.colorbar(im1, ax=axs[0])
             fig.colorbar(im2, ax=axs[1])
+
+        # Set the figure name if provided
+        if fig_name:
+            fig.canvas.set_window_title(fig_name)
 
         # Show the plot
         plt.show()
