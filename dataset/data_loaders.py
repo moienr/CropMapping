@@ -551,19 +551,20 @@ class BalancedSampler(torch.utils.data.sampler.Sampler):
         non_empty_mask_indices = []
         for i in range(len(self.dataset)):
             self.verbose and print(f"Calculating empty and non-empty mask indices: {i+1}/{len(self.dataset)}", end="\r")
-            print("")
+    
             
             crop_map = self.dataset[i][2]
             if crop_map.sum() == 0:
                 empty_mask_indices.append(i)
             else:
                 non_empty_mask_indices.append(i)
-        
+        print("") # print a new line
         if self.save_indices_file:
             if os.path.splitext(self.save_indices_file)[1] != '.pkl':
                 raise ValueError("Invalid file name format. File name should have .pkl extension.")
             with open(self.save_indices_file, 'wb') as f:
                 pickle.dump((empty_mask_indices, non_empty_mask_indices), f)
+        
         
         return empty_mask_indices, non_empty_mask_indices
     
