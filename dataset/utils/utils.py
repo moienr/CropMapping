@@ -601,6 +601,10 @@ def resize_masks(images_path, masks_path, verbose=False):
         io.imsave(mask_path, resized_mask)
 
 
+def check_folder_exists(folder):
+    if not os.path.exists(folder):
+        print("Creating folder: " + folder)
+        os.makedirs(folder)
 
 
 if __name__ == "__main__":

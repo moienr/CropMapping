@@ -248,32 +248,6 @@ def get_not_nulls_ratio(image:ee.Image, roi:ee.Geometry ,scale = 100, in_percent
 
 
 
-def add_mineral_indices(inImage):
-    """
-    Adds four new bands (clayIndex, ferrousIndex, carbonateIndex, and rockOutcropIndex) to an input image.
-    
-    Parameters:
-        inImage (ee.Image): The input image to add the new bands to.
-        
-    Returns:
-        ee.Image: The output image with the added bands.
-    """
-    # Clay Minerals = swir1 / swir2
-    clayIndex = inImage.select('SR_B6').divide(inImage.select('SR_B7')).rename('clayIndex')
-
-    # Ferrous Minerals = swir / nir
-    ferrousIndex = inImage.select('SR_B6').divide(inImage.select('SR_B5')).rename('ferrousIndex')
-
-    # Carbonate Index = (red - green) / (red + green)
-    carbonateIndex = inImage.normalizedDifference(['SR_B4','SR_B3']).rename('carbonateIndex')
-
-    # Rock Outcrop Index = (swir1 - green) / (swir1 + green)
-    rockOutcropIndex = inImage.normalizedDifference(['SR_B6','SR_B3']).rename('rockOutcropIndex')
-
-    # Add bands
-    outStack = inImage.addBands([clayIndex, ferrousIndex, carbonateIndex, rockOutcropIndex])
-
-    return outStack
 
 
 def get_closest_image(image_collection:ee.ImageCollection, date:str, clip_dates: int = None) -> ee.Image:
@@ -320,21 +294,6 @@ def get_closest_image(image_collection:ee.ImageCollection, date:str, clip_dates:
     return closest_image
 
 
-# applying the Mult and Add function to the image bands but the QABand
-def radiometric_correction(image: ee.Image , sr_bands_list = ['SR_B1','SR_B2','SR_B3','SR_B4','SR_B5','SR_B6','SR_B7']):
-    """
-    Applies radiometric correction to the surface reflectance (SR) bands of an input image, and leaves other bands unchanged.
-
-    Args:
-        image: An ee.Image object representing the input image.
-        sr_bands_list: A list of strings representing the names of the surface reflectance bands to be corrected.
-
-    Returns:
-        An ee.Image object with the radiometrically corrected SR bands added as new bands to the input image.
-    """
-    sr_bands = image.select(sr_bands_list).multiply(2.75e-05).add(-0.2)
-    image = image.addBands(sr_bands, None, True)
-    return image
 
 
 def millis_to_date_string(millis: ee.Number) -> ee.String:
@@ -1335,3 +1294,85 @@ def get_combined_s1_image(roi, start_date, end_date, priority_path='ASCENDING'):
     # Combine the images into a single image
     combined_image = combine_images(image_list).clip(roi)
     return combined_image
+
+
+###############
+
+
+def get_previous_months(harvest_date):
+    # Convert harvest date string to datetime object
+    harvest_datetime = datetime.strptime(harvest_date, '%Y-%m-%d')
+    
+    # Create a list to store the previous months
+    previous_months = []
+    
+    # Loop through the previous six months and add them to the list
+    for i in range(1, 7):
+        previous_month = ((harvest_datetime - relativedelta(months=i+1)).strftime('%Y-%m-%d'), (harvest_datetime - relativedelta(months=i)).strftime('%Y-%m-%d'))
+        
+        previous_months.append(previous_month)
+        
+    previous_months.reverse()
+    return previous_months
+
+
+def name_from_roi(roi):
+    center = roi.centroid().getInfo()['coordinates']
+    x = str(center[0]).replace('.','-')[0:5]
+    y = str(center[1]).replace('.','-')[0:5]
+    return x + "_" + y + ".tif"
+
+
+
+
+def download_s1_s2(roi, start_date, end_date, s1_folder="", s2_folder="",
+                   s1_file_name="s1.tif", s2_file_name="s2.tif",
+                   scale=10, bands=['B2', 'B3', 'B4'], proj='EPSG:3857'):
+    # EPSG:4326 or EPSG:3857
+    print("downloading s1 ...")
+    s1_img = get_combined_s1_image(roi, start_date, end_date)
+    geemap.download_ee_image(s1_img, s1_folder + s1_file_name, crs=proj, scale=scale, region=roi)
+    print("downloading s2 ...")
+    s2_img = get_combined_s2_image(roi, start_date, end_date)
+    s2_img = s2_img.select(bands)
+    geemap.download_ee_image(s2_img, s2_folder + s2_file_name, crs=proj, scale=scale, region=roi)
+
+
+def ts_downloader(roi, file_name, harvest_date, scale=10, bands=['B2','B3','B4'], proj='EPSG:3857', dataset_folder="ts_dataset"):
+    ts_dates = get_previous_months(harvest_date)
+    
+    for i, ts_date in enumerate(ts_dates):
+        print(f"Downloading date {i + 1}/{len(ts_dates)}: from {ts_date[0]} to {ts_date[1]}")
+        
+        s1_directory = f"{dataset_folder}/s1/{str(i + 1)}/"
+        s2_directory = f"{dataset_folder}/s2/{str(i + 1)}/"
+        
+        check_folder_exists(s1_directory)
+        check_folder_exists(s2_directory)
+        
+        download_s1_s2(
+            roi, ts_date[0], ts_date[1],
+            s1_folder=s1_directory, s2_folder=s2_directory,
+            s1_file_name=file_name, s2_file_name=file_name,
+            scale=scale, bands=bands
+        )
+        
+        # Check if download was successful and redownload if not
+        s1_image = f"{s1_directory}/{file_name}"
+        s2_image = f"{s2_directory}/{file_name}"
+        
+        fail_download_count = 0
+        while (not os.path.exists(s1_image)) or (not os.path.exists(s2_image)):
+            print('Incomplete download, Retrying...')
+            
+            # fail_download_count += 1
+            # if fail_download_count >= 5:
+            #    # Log necessary info
+            #    break
+                
+            download_s1_s2(
+                roi, ts_date[0], ts_date[1],
+                s1_folder=s1_directory, s2_folder=s2_directory,
+                s1_file_name=file_name, s2_file_name=file_name,
+                scale=scale, bands=bands
+            )
