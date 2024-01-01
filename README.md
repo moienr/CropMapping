@@ -3,7 +3,6 @@
 
 
 ```
-Developed for Iran's Space Research Center's CropMapping competition
 Supervised by: Dr. Sara Attarchi
 Authors: Mohammad Ramezanpour, Moien Rangzan
 ```
