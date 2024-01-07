@@ -17,7 +17,7 @@ Our model is a Siamese 3D segmentation network that takes as input two time-seri
 
 
 ## Training procedure
-Since the dataset provided by ISRC is partially annotated, meaning that in each image, there might be un-annotated crops, we used transfer learning to train our model. 
+Since the dataset provided by Competition is partially annotated, meaning that in each image, there might be un-annotated crops, we used transfer learning to train our model. 
 
 - **Step 1**: First, we downloaded a dataset of around 150GB of data using Google Earth Engine(GEE), consisting of 6 months of Sentinel-1 and Sentinel-2 images and their corresponding annotations from [EUCROPMAP 2018 Dataset](https://developers.google.com/earth-engine/datasets/catalog/JRC_D5_EUCROPMAP_V1) freely available on GEE.
 - **Step 2**: We trained our model on this dataset for 11 epochs.
