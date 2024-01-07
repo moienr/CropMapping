@@ -24,7 +24,7 @@ Since the dataset provided by ISRC is partially annotated, meaning that in each 
 
 - **Step 3**: Then we changed the segmentation head of our model and trained it on the ISRC dataset for 5 epochs, with a lower learning rate of `1e-5` for trained layers and `1e-4` for new layers.
 
-This procedure enables the model to learn the features of the ISRC dataset while not forgetting the features of the EUCROPMAP dataset, and the low epoch number for the ISRC dataset prevents the model from overfitting on partially annotated data.
+This procedure enables the model to learn the features of the Competition dataset while not forgetting the features of the EUCROPMAP dataset, and the low epoch number for the ISRC dataset prevents the model from overfitting on partially annotated data.
 
 
 # How to use
