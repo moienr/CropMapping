@@ -46,7 +46,7 @@ This procedure enables the model to learn the features of the Competition datase
 
 ## Dataset
 
-The ISRC dataset is a in the form of a shapefile, for each crop, and an exel file containg the harvest time of each crop for each province of Iran.
+The competition dataset is a in the form of a shapefile, for each crop, and an exel file containg the harvest time of each crop for each province of Iran.
 
 In order to trnsfrom this dataset into a Image segmentation dataset, we converted the shapefiles into binary mases, and a clustering algorithm was used to cluster ROIs that were close to each other.
 
