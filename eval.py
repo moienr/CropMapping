@@ -29,7 +29,7 @@ parser.add_argument("--dataset_dir_path", "-dp", type=str, default="./crop_map_d
 parser.add_argument("--batch_size", "-bs", type=int, default=16, help="Batch size (keep the same as training)")
 parser.add_argument("--save_sampler_file", "-ss", type=bool, default=True, help="Save sampler file or not")
 parser.add_argument("--load_sampler_file_from_path", "-lp", type=str, default=None, help="Path to load sampler file")
-parser.add_argument("--trained_model_path", "-tp", type=str, default="./model/StateDict_epoch11_EU.pth", help="Path to trained model")
+parser.add_argument("--trained_model_path", "-tp", type=str, default="./model/saved_models/StateDict_epoch10_Full.pth", help="Path to trained model")
 parser.add_argument("--threshold", "-th", type=float, default=0.35, help="Threshold value")
 args = parser.parse_args()
 
@@ -76,11 +76,10 @@ def main():
     test_sampler = dl.BalancedSampler(test_dataset, ratio=0.00, shuffle=True, save_indices_file=SAVE_SAMPLER_FILE_PATH, load_indices_file=LOAD_SAMPLER_FILE_PATH)
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, num_workers=2, sampler=test_sampler)
     
-    dualunet3d_dict = torch.load(TRAIED_MODEL_PATH)
+
     dualunet3d = DualUNet3D(s1_in_channels=2, s2_in_channels=10, out_channels=21,ts_depth=6,non_lin='sigmoid').to(DEVICE)
-    dualunet3d.load_state_dict(dualunet3d_dict)
     model = IranCropModel(out_channels=len(CROP_LIST), dualunet3d=dualunet3d, non_lin=nn.Sigmoid()).to(DEVICE)
-    
+    model.load_state_dict(torch.load(TRAIED_MODEL_PATH))
     
     eval_results = calculate_dataset_metrics({f"{EVAL_CROP.capitalize()}_Test": test_loader}, model, threshold=THRESHOLD, channel=CROP_LIST.index(EVAL_CROP))
     pprint.pprint(eval_results)
